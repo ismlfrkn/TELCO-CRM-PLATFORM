@@ -6,7 +6,7 @@ spring:
     config:
       server:
         git:
-          uri: https://github.com/KULLANICI_ADIN/TELCO-CRM-PAIR6.git
+          uri: https://github.com/ismlfrkn/TELCO-CRM-PLATFORM.git
           default-label: main
           search-paths: configs,configs/{application}
           clone-on-start: true
