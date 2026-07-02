@@ -1,0 +1,27 @@
+server:
+  port: 9003
+
+spring:
+  application:
+    name: product-catalog-service
+  datasource:
+    url: jdbc:postgresql://localhost:5433/product_catalog_db
+    username: telco_admin
+    password: telco_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
