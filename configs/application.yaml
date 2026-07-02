@@ -7,6 +7,17 @@ management:
     health:
       show-details: always
 
+# api-gateway ile downstream servisler arasinda paylasilan internal secret.
+# Downstream servisler X-User-Id/X-User-Roles header'larina yalnizca bu secret dogruysa guvenir
+# (bkz. identity-service GatewayHeaderAuthenticationFilter). Tum servislerde ayni deger olmalidir.
+gateway:
+  internal-secret: 1f4c1c771e1852984d64325c82b2604ad6d20d3b58406c61f1e47b74120a45cd
+
+# identity-service'in access token uretmek, api-gateway'in ise dogrulamak icin kullandigi ayni HMAC
+# secret (jjwt, HS256). Global tanimlanir ki iki servis de ayni degeri tek kaynaktan okusun.
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
 eureka:
   client:
     service-url:
