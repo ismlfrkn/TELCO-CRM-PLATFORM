@@ -27,6 +27,10 @@ spring:
               uri: lb://payment-service
               predicates:
                 - Path=/api/v1/payments/**,/api/v1/wallets/**
+            - id: usage-service
+              uri: lb://usage-service
+              predicates:
+                - Path=/api/v1/usage/**,/api/v1/cdr-events/**,/api/v1/quotas/**
 
 # jwt.secret configs/application.yaml (global) icinde tanimlidir; identity-service ile ayni
 # degeri tek kaynaktan okur.
