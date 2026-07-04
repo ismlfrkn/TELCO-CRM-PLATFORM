@@ -28,6 +28,7 @@
         <module>subscription-service</module>
         <module>payment-service</module>
         <module>usage-service</module>
+        <module>billing-service</module>
     </modules>
 
     <properties>

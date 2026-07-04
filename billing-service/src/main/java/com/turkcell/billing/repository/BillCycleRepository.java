@@ -1,0 +1,14 @@
+package com.turkcell.billing.repository;
+
+import com.turkcell.billing.entity.BillCycle;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface BillCycleRepository extends JpaRepository<BillCycle, UUID> {
+
+    Optional<BillCycle> findByCustomerId(UUID customerId);
+}
