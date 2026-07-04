@@ -15,6 +15,14 @@ spring:
               uri: lb://identity-service
               predicates:
                 - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/roles/**,/api/v1/permissions/**
+            - id: product-catalog-service
+              uri: lb://product-catalog-service
+              predicates:
+                - Path=/api/v1/tariffs/**,/api/v1/addons/**,/api/v1/product-offerings/**
+            - id: subscription-service
+              uri: lb://subscription-service
+              predicates:
+                - Path=/api/v1/subscriptions/**,/api/v1/sim-cards/**,/api/v1/msisdn-pool/**
 
 # jwt.secret configs/application.yaml (global) icinde tanimlidir; identity-service ile ayni
 # degeri tek kaynaktan okur.

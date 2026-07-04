@@ -25,6 +25,7 @@
         <module>product-catalog-service</module>
         <module>identity-service</module>
         <module>customer-service</module>
+        <module>subscription-service</module>
     </modules>
 
     <properties>
