@@ -26,6 +26,7 @@
         <module>identity-service</module>
         <module>customer-service</module>
         <module>subscription-service</module>
+        <module>payment-service</module>
     </modules>
 
     <properties>
