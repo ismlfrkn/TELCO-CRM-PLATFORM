@@ -35,6 +35,10 @@ spring:
               uri: lb://billing-service
               predicates:
                 - Path=/api/v1/invoices/**,/api/v1/billing/**,/api/v1/bill-cycles/**
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/v1/notifications/**,/api/v1/channels/**,/api/v1/notification-templates/**
 
 # jwt.secret configs/application.yaml (global) icinde tanimlidir; identity-service ile ayni
 # degeri tek kaynaktan okur.

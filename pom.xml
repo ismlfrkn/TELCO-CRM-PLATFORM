@@ -29,6 +29,7 @@
         <module>payment-service</module>
         <module>usage-service</module>
         <module>billing-service</module>
+        <module>notification-service</module>
     </modules>
 
     <properties>
