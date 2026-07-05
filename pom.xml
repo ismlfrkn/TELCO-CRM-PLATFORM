@@ -30,6 +30,7 @@
         <module>usage-service</module>
         <module>billing-service</module>
         <module>notification-service</module>
+        <module>ticket-service</module>
     </modules>
 
     <properties>

@@ -39,6 +39,10 @@ spring:
               uri: lb://notification-service
               predicates:
                 - Path=/api/v1/notifications/**,/api/v1/channels/**,/api/v1/notification-templates/**
+            - id: ticket-service
+              uri: lb://ticket-service
+              predicates:
+                - Path=/api/v1/tickets/**,/api/v1/slas/**
 
 # jwt.secret configs/application.yaml (global) icinde tanimlidir; identity-service ile ayni
 # degeri tek kaynaktan okur.
