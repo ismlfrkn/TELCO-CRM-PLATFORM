@@ -16,6 +16,7 @@ public class InvoiceResponse {
     private BigDecimal subTotal;
     private BigDecimal tax;
     private BigDecimal grandTotal;
+    private String currency;
     private String status;
     private LocalDate dueDate;
     private Instant issuedAt;
@@ -44,6 +45,9 @@ public class InvoiceResponse {
 
     public BigDecimal getGrandTotal() { return grandTotal; }
     public void setGrandTotal(BigDecimal grandTotal) { this.grandTotal = grandTotal; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

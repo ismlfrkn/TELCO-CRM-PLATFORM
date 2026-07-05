@@ -16,6 +16,9 @@ public class PaymentCreateRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
     private BigDecimal amount;
 
+    // Bos birakilirsa Payment.prePersist varsayilan olarak "TRY" atar (Wallet/Order ile ayni pattern).
+    private String currency;
+
     @NotBlank(message = "Method cannot be blank")
     private String method; // CARD, BANK_TRANSFER, WALLET
 
@@ -30,6 +33,9 @@ public class PaymentCreateRequest {
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public String getMethod() { return method; }
     public void setMethod(String method) { this.method = method; }

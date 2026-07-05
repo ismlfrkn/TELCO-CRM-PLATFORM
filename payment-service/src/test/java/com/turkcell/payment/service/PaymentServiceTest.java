@@ -67,6 +67,17 @@ class PaymentServiceTest {
     }
 
     @Test
+    void createPayment_withExplicitCurrency_propagatesCurrencyToPayment() {
+        when(paymentRepository.findByIdempotencyKey("key-eur")).thenReturn(Optional.empty());
+        PaymentCreateRequest request = cardRequest(new BigDecimal("100.00"));
+        request.setCurrency("EUR");
+
+        PaymentResponse response = paymentService.createPayment("key-eur", request);
+
+        assertThat(response.getCurrency()).isEqualTo("EUR");
+    }
+
+    @Test
     void createPayment_withSimulateFailure_marksFailedAndPublishesFailedEvent() {
         when(paymentRepository.findByIdempotencyKey("key-2")).thenReturn(Optional.empty());
         PaymentCreateRequest request = cardRequest(new BigDecimal("100.00"));

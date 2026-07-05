@@ -9,6 +9,7 @@ public class PaymentResponse {
     private UUID id;
     private UUID invoiceId;
     private BigDecimal amount;
+    private String currency;
     private String method;
     private UUID walletId;
     private String externalRef;
@@ -24,6 +25,9 @@ public class PaymentResponse {
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public String getMethod() { return method; }
     public void setMethod(String method) { this.method = method; }

@@ -79,6 +79,20 @@ class InvoiceServiceTest {
     }
 
     @Test
+    void createInvoice_withExplicitCurrency_propagatesCurrencyToInvoice() {
+        UUID subscriptionId = UUID.randomUUID();
+        when(invoiceRepository.findBySubscriptionIdAndPeriodStartAndPeriodEnd(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        InvoiceCreateRequest request = requestWithLines(subscriptionId, lineOf("Monthly fee", "1", "100.00"));
+        request.setCurrency("EUR");
+
+        InvoiceResponse response = invoiceService.createInvoice(request);
+
+        assertThat(response.getCurrency()).isEqualTo("EUR");
+    }
+
+    @Test
     void createInvoice_advancesBillCycleForCustomer() {
         UUID subscriptionId = UUID.randomUUID();
         UUID customerId = UUID.randomUUID();

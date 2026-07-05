@@ -199,6 +199,7 @@ public class OrderService {
     private PaymentClientRequest paymentRequest(Order order) {
         PaymentClientRequest request = new PaymentClientRequest();
         request.setAmount(order.getTotalAmount());
+        request.setCurrency(order.getCurrency());
         request.setMethod(PAYMENT_METHOD);
         return request;
     }

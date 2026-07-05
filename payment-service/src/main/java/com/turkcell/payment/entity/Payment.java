@@ -28,6 +28,9 @@ public class Payment {
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @Column(nullable = false, length = 3)
+    private String currency;
+
     @Column(nullable = false)
     private String method; // CARD, BANK_TRANSFER, WALLET
 
@@ -57,6 +60,9 @@ public class Payment {
         if (createdAt == null) {
             createdAt = Instant.now();
         }
+        if (currency == null) {
+            currency = "TRY";
+        }
     }
 
     public UUID getId() { return id; }
@@ -67,6 +73,9 @@ public class Payment {
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public String getMethod() { return method; }
     public void setMethod(String method) { this.method = method; }

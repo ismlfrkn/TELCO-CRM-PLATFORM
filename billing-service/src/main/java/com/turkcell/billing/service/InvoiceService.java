@@ -90,6 +90,7 @@ public class InvoiceService {
         invoice.setPeriodStart(request.getPeriodStart());
         invoice.setPeriodEnd(request.getPeriodEnd());
         invoice.setDueDate(request.getDueDate());
+        invoice.setCurrency(request.getCurrency());
         invoice.setStatus(Invoice.STATUS_PENDING);
 
         BigDecimal subTotal = BigDecimal.ZERO;

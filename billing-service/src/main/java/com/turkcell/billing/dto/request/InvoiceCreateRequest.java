@@ -25,6 +25,9 @@ public class InvoiceCreateRequest {
     @NotNull(message = "Due date cannot be null")
     private LocalDate dueDate;
 
+    // Bos birakilirsa Invoice.prePersist varsayilan olarak "TRY" atar (Wallet/Payment ile ayni pattern).
+    private String currency;
+
     @NotEmpty(message = "At least one invoice line is required")
     @Valid
     private List<InvoiceLineRequest> lines;
@@ -43,6 +46,9 @@ public class InvoiceCreateRequest {
 
     public LocalDate getDueDate() { return dueDate; }
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public List<InvoiceLineRequest> getLines() { return lines; }
     public void setLines(List<InvoiceLineRequest> lines) { this.lines = lines; }

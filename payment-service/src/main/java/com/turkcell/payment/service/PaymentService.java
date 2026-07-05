@@ -93,6 +93,7 @@ public class PaymentService {
         payment.setIdempotencyKey(idempotencyKey);
         payment.setInvoiceId(request.getInvoiceId());
         payment.setAmount(request.getAmount());
+        payment.setCurrency(request.getCurrency());
         payment.setMethod(request.getMethod());
         payment.setWalletId(request.getWalletId());
         payment.setStatus(STATUS_PENDING);

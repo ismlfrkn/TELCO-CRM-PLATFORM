@@ -46,6 +46,9 @@ public class Invoice {
     @Column(name = "grand_total", nullable = false)
     private BigDecimal grandTotal;
 
+    @Column(nullable = false, length = 3)
+    private String currency;
+
     @Column(nullable = false)
     private String status;
 
@@ -65,6 +68,9 @@ public class Invoice {
         }
         if (status == null) {
             status = STATUS_PENDING;
+        }
+        if (currency == null) {
+            currency = "TRY";
         }
     }
 
@@ -91,6 +97,9 @@ public class Invoice {
 
     public BigDecimal getGrandTotal() { return grandTotal; }
     public void setGrandTotal(BigDecimal grandTotal) { this.grandTotal = grandTotal; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
