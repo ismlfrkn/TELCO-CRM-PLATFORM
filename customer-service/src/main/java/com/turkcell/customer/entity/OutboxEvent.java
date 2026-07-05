@@ -1,4 +1,4 @@
-package com.turkcell.productcatalog.entity;
+package com.turkcell.customer.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

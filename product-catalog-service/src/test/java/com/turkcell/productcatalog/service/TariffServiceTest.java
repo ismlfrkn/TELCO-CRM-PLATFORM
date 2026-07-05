@@ -21,20 +21,23 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class TariffServiceTest {
 
     private TariffRepository tariffRepository;
     private AddonService addonService;
+    private OutboxEventService outboxEventService;
     private TariffService tariffService;
 
     @BeforeEach
     void setUp() {
         tariffRepository = mock(TariffRepository.class);
         addonService = mock(AddonService.class);
+        outboxEventService = mock(OutboxEventService.class);
         TariffMapper tariffMapper = Mappers.getMapper(TariffMapper.class);
-        tariffService = new TariffService(tariffRepository, addonService, tariffMapper);
+        tariffService = new TariffService(tariffRepository, addonService, tariffMapper, outboxEventService);
 
         when(tariffRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -57,6 +60,7 @@ class TariffServiceTest {
 
         assertThat(response.getCode()).isEqualTo("TRF-001");
         assertThat(response.getMonthlyFee()).isEqualByComparingTo("150.00");
+        verify(outboxEventService).publish(eq("Tariff"), any(), eq("TariffCreated"), any());
     }
 
     @Test
@@ -83,6 +87,7 @@ class TariffServiceTest {
 
         assertThat(response.getName()).isEqualTo("Renamed Tariff");
         assertThat(response.getMonthlyFee()).isEqualByComparingTo("200.00");
+        verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffUpdated"), any());
     }
 
     @Test
@@ -97,6 +102,7 @@ class TariffServiceTest {
 
         assertThat(response.getName()).isEqualTo("Patched Name");
         assertThat(response.getMonthlyFee()).isEqualByComparingTo("150.00"); // degismedi
+        verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffUpdated"), any());
     }
 
     @Test
@@ -107,6 +113,7 @@ class TariffServiceTest {
         tariffService.deleteTariff("TRF-001");
 
         assertThat(tariff.getStatus()).isEqualTo("INACTIVE");
+        verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffDeactivated"), any());
     }
 
     @Test

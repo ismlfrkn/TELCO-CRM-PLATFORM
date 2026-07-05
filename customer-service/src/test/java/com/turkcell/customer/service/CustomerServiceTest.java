@@ -20,6 +20,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class CustomerServiceTest {
@@ -27,13 +28,15 @@ class CustomerServiceTest {
     private static final String VALID_TCKN = "10000000146";
 
     private CustomerRepository customerRepository;
+    private OutboxEventService outboxEventService;
     private CustomerService customerService;
 
     @BeforeEach
     void setUp() {
         customerRepository = mock(CustomerRepository.class);
+        outboxEventService = mock(OutboxEventService.class);
         CustomerMapper customerMapper = Mappers.getMapper(CustomerMapper.class);
-        customerService = new CustomerService(customerRepository, customerMapper);
+        customerService = new CustomerService(customerRepository, customerMapper, outboxEventService);
 
         when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -48,6 +51,7 @@ class CustomerServiceTest {
 
         assertThat(response.getStatus()).isEqualTo("PENDING");
         assertThat(response.getIdentityNumber()).isEqualTo(VALID_TCKN);
+        verify(outboxEventService).publish(eq("Customer"), any(), eq("CustomerCreated"), any());
     }
 
     @Test
@@ -89,6 +93,7 @@ class CustomerServiceTest {
         CustomerResponse response = customerService.approveKyc(customer.getId());
 
         assertThat(response.getStatus()).isEqualTo("ACTIVE");
+        verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerKycApproved"), any());
     }
 
     @Test
@@ -109,6 +114,7 @@ class CustomerServiceTest {
         CustomerResponse response = customerService.rejectKyc(customer.getId());
 
         assertThat(response.getStatus()).isEqualTo("REJECTED");
+        verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerKycRejected"), any());
     }
 
     @Test
@@ -136,6 +142,7 @@ class CustomerServiceTest {
 
         assertThat(response.getFirstName()).isEqualTo("Updated");
         assertThat(response.getIdentityNumber()).isEqualTo(VALID_TCKN); // degistirilemez
+        verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerUpdated"), any());
     }
 
     @Test
@@ -146,6 +153,7 @@ class CustomerServiceTest {
         customerService.deleteCustomer(customer.getId());
 
         assertThat(customer.isDeleted()).isTrue();
+        verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerDeleted"), any());
     }
 
     @Test

@@ -23,23 +23,27 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class ProductOfferingServiceTest {
 
     private ProductOfferingRepository productOfferingRepository;
     private TariffService tariffService;
+    private OutboxEventService outboxEventService;
     private ProductOfferingService productOfferingService;
 
     @BeforeEach
     void setUp() {
         productOfferingRepository = mock(ProductOfferingRepository.class);
         tariffService = mock(TariffService.class);
+        outboxEventService = mock(OutboxEventService.class);
         ProductOfferingMapper mapper = Mappers.getMapper(ProductOfferingMapper.class);
         // ProductOfferingMapper "uses = {TariffMapper.class}" ile @Autowired field injection bekliyor;
         // Mappers.getMapper() bunu Spring context'i olmadan doldurmuyor, bu yuzden testte elle veriyoruz.
         ReflectionTestUtils.setField(mapper, "tariffMapper", Mappers.getMapper(TariffMapper.class));
-        productOfferingService = new ProductOfferingService(productOfferingRepository, tariffService, mapper);
+        productOfferingService = new ProductOfferingService(productOfferingRepository, tariffService, mapper,
+                outboxEventService);
 
         when(productOfferingRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -59,6 +63,7 @@ class ProductOfferingServiceTest {
         ProductOfferingResponse response = productOfferingService.createProductOffering(request);
 
         assertThat(response.getCode()).isEqualTo("PO-001");
+        verify(outboxEventService).publish(eq("ProductOffering"), any(), eq("ProductOfferingCreated"), any());
     }
 
     @Test
@@ -95,6 +100,7 @@ class ProductOfferingServiceTest {
 
         assertThat(response.getName()).isEqualTo("Renamed Bundle");
         assertThat(offering.getTariff().getCode()).isEqualTo("TRF-002");
+        verify(outboxEventService).publish(eq("ProductOffering"), eq(offering.getId()), eq("ProductOfferingUpdated"), any());
     }
 
     @Test
@@ -109,6 +115,7 @@ class ProductOfferingServiceTest {
 
         assertThat(response.getName()).isEqualTo("Patched Name");
         verifyNoInteractions(tariffService);
+        verify(outboxEventService).publish(eq("ProductOffering"), eq(offering.getId()), eq("ProductOfferingUpdated"), any());
     }
 
     @Test
@@ -119,6 +126,7 @@ class ProductOfferingServiceTest {
         productOfferingService.deleteProductOffering("PO-001");
 
         assertThat(offering.getStatus()).isEqualTo("INACTIVE");
+        verify(outboxEventService).publish(eq("ProductOffering"), eq(offering.getId()), eq("ProductOfferingDeactivated"), any());
     }
 
     @Test

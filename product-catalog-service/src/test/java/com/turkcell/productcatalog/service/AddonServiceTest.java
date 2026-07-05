@@ -22,18 +22,21 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class AddonServiceTest {
 
     private AddonRepository addonRepository;
+    private OutboxEventService outboxEventService;
     private AddonService addonService;
 
     @BeforeEach
     void setUp() {
         addonRepository = mock(AddonRepository.class);
+        outboxEventService = mock(OutboxEventService.class);
         AddonMapper addonMapper = Mappers.getMapper(AddonMapper.class);
-        addonService = new AddonService(addonRepository, addonMapper);
+        addonService = new AddonService(addonRepository, addonMapper, outboxEventService);
 
         when(addonRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -85,6 +88,7 @@ class AddonServiceTest {
 
         assertThat(response.getCode()).isEqualTo("ADN-001");
         assertThat(response.getPrice()).isEqualByComparingTo("50.00");
+        verify(outboxEventService).publish(eq("Addon"), any(), eq("AddonCreated"), any());
     }
 
     @Test
@@ -99,6 +103,7 @@ class AddonServiceTest {
 
         assertThat(response.getPrice()).isEqualByComparingTo("75.00");
         assertThat(response.getName()).isEqualTo("Extra 5GB"); // degismedi
+        verify(outboxEventService).publish(eq("Addon"), eq(addon.getId()), eq("AddonUpdated"), any());
     }
 
     @Test
@@ -109,6 +114,7 @@ class AddonServiceTest {
         addonService.deleteAddon("ADN-001");
 
         assertThat(addon.getStatus()).isEqualTo("INACTIVE");
+        verify(outboxEventService).publish(eq("Addon"), eq(addon.getId()), eq("AddonDeactivated"), any());
     }
 
     private Addon existingAddon() {

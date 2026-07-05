@@ -19,12 +19,17 @@ import java.util.UUID;
 @Service
 public class CustomerService {
 
+    private static final String AGGREGATE_TYPE = "Customer";
+
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final OutboxEventService outboxEventService;
 
-    public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper) {
+    public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper,
+                            OutboxEventService outboxEventService) {
         this.customerRepository = customerRepository;
         this.customerMapper = customerMapper;
+        this.outboxEventService = outboxEventService;
     }
 
     @Transactional
@@ -48,7 +53,10 @@ public class CustomerService {
         customer.setPhone(request.getPhone());
         customer.setStatus("PENDING");
 
-        return customerMapper.toResponse(customerRepository.save(customer));
+        customer = customerRepository.save(customer);
+        CustomerResponse response = customerMapper.toResponse(customer);
+        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerCreated", response);
+        return response;
     }
 
     public CustomerResponse getCustomerResponseById(UUID id) {
@@ -70,14 +78,18 @@ public class CustomerService {
         customer.setEmail(request.getEmail());
         customer.setPhone(request.getPhone());
 
-        return customerMapper.toResponse(customerRepository.save(customer));
+        customer = customerRepository.save(customer);
+        CustomerResponse response = customerMapper.toResponse(customer);
+        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerUpdated", response);
+        return response;
     }
 
     @Transactional
     public void deleteCustomer(UUID id) {
         Customer customer = getCustomerById(id);
         customer.setDeleted(true);
-        customerRepository.save(customer);
+        customer = customerRepository.save(customer);
+        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerDeleted", customerMapper.toResponse(customer));
     }
 
     @Transactional
@@ -85,7 +97,10 @@ public class CustomerService {
         Customer customer = getCustomerById(id);
         requirePendingStatus(customer);
         customer.setStatus("ACTIVE");
-        return customerMapper.toResponse(customerRepository.save(customer));
+        customer = customerRepository.save(customer);
+        CustomerResponse response = customerMapper.toResponse(customer);
+        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerKycApproved", response);
+        return response;
     }
 
     @Transactional
@@ -93,7 +108,10 @@ public class CustomerService {
         Customer customer = getCustomerById(id);
         requirePendingStatus(customer);
         customer.setStatus("REJECTED");
-        return customerMapper.toResponse(customerRepository.save(customer));
+        customer = customerRepository.save(customer);
+        CustomerResponse response = customerMapper.toResponse(customer);
+        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerKycRejected", response);
+        return response;
     }
 
     private void requirePendingStatus(Customer customer) {
