@@ -43,6 +43,10 @@ spring:
               uri: lb://ticket-service
               predicates:
                 - Path=/api/v1/tickets/**,/api/v1/slas/**
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/v1/orders/**
 
 # jwt.secret configs/application.yaml (global) icinde tanimlidir; identity-service ile ayni
 # degeri tek kaynaktan okur.

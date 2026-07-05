@@ -1,28 +1,14 @@
-package com.turkcell.payment.dto.request;
-
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+package com.turkcell.order.client;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public class PaymentCreateRequest {
+public class PaymentClientRequest {
 
-    // Siparis anindaki (aktivasyon ucreti gibi) odemelerde bos birakilir - fatura henuz kesilmemistir.
-    private UUID invoiceId;
-
-    @NotNull(message = "Amount cannot be null")
-    @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
+    private UUID invoiceId; // siparis anindaki odemede bos birakilir
     private BigDecimal amount;
-
-    @NotBlank(message = "Method cannot be blank")
-    private String method; // CARD, BANK_TRANSFER, WALLET
-
-    // method=WALLET oldugunda zorunlu, diger yontemlerde yok sayilir
+    private String method;
     private UUID walletId;
-
-    // Gercek bir PSP entegrasyonu olmadigi icin test amacli: true ise mock PSP odemeyi reddeder.
     private boolean simulateFailure;
 
     public UUID getInvoiceId() { return invoiceId; }

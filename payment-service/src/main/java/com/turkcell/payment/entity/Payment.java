@@ -20,7 +20,9 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "invoice_id", nullable = false)
+    // Nullable: siparis anindaki (aktivasyon ucreti gibi) odemelerin henuz bir faturasi olmaz,
+    // fatura aylik bill-run ile sonradan kesilir (order-service saga entegrasyonu icin gevsetildi).
+    @Column(name = "invoice_id")
     private UUID invoiceId; // billing-service'e ait, cross-service referans (FK degil)
 
     @Column(nullable = false)
