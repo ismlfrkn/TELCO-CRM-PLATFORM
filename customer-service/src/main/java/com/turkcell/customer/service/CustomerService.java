@@ -24,12 +24,14 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
     private final OutboxEventService outboxEventService;
+    private final AuditLogService auditLogService;
 
     public CustomerService(CustomerRepository customerRepository, CustomerMapper customerMapper,
-                            OutboxEventService outboxEventService) {
+                            OutboxEventService outboxEventService, AuditLogService auditLogService) {
         this.customerRepository = customerRepository;
         this.customerMapper = customerMapper;
         this.outboxEventService = outboxEventService;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional
@@ -56,6 +58,7 @@ public class CustomerService {
         customer = customerRepository.save(customer);
         CustomerResponse response = customerMapper.toResponse(customer);
         outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerCreated", response);
+        auditLogService.record("CUSTOMER_CREATED", AGGREGATE_TYPE, customer.getId(), null, response);
         return response;
     }
 
@@ -81,6 +84,7 @@ public class CustomerService {
         customer = customerRepository.save(customer);
         CustomerResponse response = customerMapper.toResponse(customer);
         outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerUpdated", response);
+        auditLogService.record("CUSTOMER_UPDATED", AGGREGATE_TYPE, customer.getId(), null, response);
         return response;
     }
 
@@ -89,7 +93,9 @@ public class CustomerService {
         Customer customer = getCustomerById(id);
         customer.setDeleted(true);
         customer = customerRepository.save(customer);
-        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerDeleted", customerMapper.toResponse(customer));
+        CustomerResponse response = customerMapper.toResponse(customer);
+        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerDeleted", response);
+        auditLogService.record("CUSTOMER_DELETED", AGGREGATE_TYPE, customer.getId(), null, response);
     }
 
     @Transactional
@@ -100,6 +106,7 @@ public class CustomerService {
         customer = customerRepository.save(customer);
         CustomerResponse response = customerMapper.toResponse(customer);
         outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerKycApproved", response);
+        auditLogService.record("CUSTOMER_KYC_APPROVED", AGGREGATE_TYPE, customer.getId(), null, response);
         return response;
     }
 
@@ -111,6 +118,7 @@ public class CustomerService {
         customer = customerRepository.save(customer);
         CustomerResponse response = customerMapper.toResponse(customer);
         outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerKycRejected", response);
+        auditLogService.record("CUSTOMER_KYC_REJECTED", AGGREGATE_TYPE, customer.getId(), null, response);
         return response;
     }
 

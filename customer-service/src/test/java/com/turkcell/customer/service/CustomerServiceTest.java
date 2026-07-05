@@ -29,14 +29,16 @@ class CustomerServiceTest {
 
     private CustomerRepository customerRepository;
     private OutboxEventService outboxEventService;
+    private AuditLogService auditLogService;
     private CustomerService customerService;
 
     @BeforeEach
     void setUp() {
         customerRepository = mock(CustomerRepository.class);
         outboxEventService = mock(OutboxEventService.class);
+        auditLogService = mock(AuditLogService.class);
         CustomerMapper customerMapper = Mappers.getMapper(CustomerMapper.class);
-        customerService = new CustomerService(customerRepository, customerMapper, outboxEventService);
+        customerService = new CustomerService(customerRepository, customerMapper, outboxEventService, auditLogService);
 
         when(customerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -52,6 +54,7 @@ class CustomerServiceTest {
         assertThat(response.getStatus()).isEqualTo("PENDING");
         assertThat(response.getIdentityNumber()).isEqualTo(VALID_TCKN);
         verify(outboxEventService).publish(eq("Customer"), any(), eq("CustomerCreated"), any());
+        verify(auditLogService).record(eq("CUSTOMER_CREATED"), eq("Customer"), any(), eq(null), any());
     }
 
     @Test
@@ -94,6 +97,7 @@ class CustomerServiceTest {
 
         assertThat(response.getStatus()).isEqualTo("ACTIVE");
         verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerKycApproved"), any());
+        verify(auditLogService).record(eq("CUSTOMER_KYC_APPROVED"), eq("Customer"), eq(customer.getId()), eq(null), any());
     }
 
     @Test
@@ -115,6 +119,7 @@ class CustomerServiceTest {
 
         assertThat(response.getStatus()).isEqualTo("REJECTED");
         verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerKycRejected"), any());
+        verify(auditLogService).record(eq("CUSTOMER_KYC_REJECTED"), eq("Customer"), eq(customer.getId()), eq(null), any());
     }
 
     @Test
@@ -143,6 +148,7 @@ class CustomerServiceTest {
         assertThat(response.getFirstName()).isEqualTo("Updated");
         assertThat(response.getIdentityNumber()).isEqualTo(VALID_TCKN); // degistirilemez
         verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerUpdated"), any());
+        verify(auditLogService).record(eq("CUSTOMER_UPDATED"), eq("Customer"), eq(customer.getId()), eq(null), any());
     }
 
     @Test
@@ -154,6 +160,7 @@ class CustomerServiceTest {
 
         assertThat(customer.isDeleted()).isTrue();
         verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerDeleted"), any());
+        verify(auditLogService).record(eq("CUSTOMER_DELETED"), eq("Customer"), eq(customer.getId()), eq(null), any());
     }
 
     @Test
