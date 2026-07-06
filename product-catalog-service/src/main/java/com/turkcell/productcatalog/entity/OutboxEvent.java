@@ -1,6 +1,12 @@
 package com.turkcell.productcatalog.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -8,6 +14,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "outbox_events")
 public class OutboxEvent {
+
+    public static final String STATUS_PENDING = "PENDING";
+    public static final String STATUS_PUBLISHED = "PUBLISHED";
+    public static final String STATUS_FAILED = "FAILED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,29 +35,31 @@ public class OutboxEvent {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String payload;
 
+    @Column(nullable = false)
+    private String status;
+
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
-    private boolean processed;
+    @Column(name = "published_at")
+    private Instant publishedAt;
+
+    @Column(name = "last_error", columnDefinition = "TEXT")
+    private String lastError;
 
     public OutboxEvent() {
-    }
-
-    public OutboxEvent(UUID id, String aggregateType, UUID aggregateId, String eventType, String payload, Instant createdAt, boolean processed) {
-        this.id = id;
-        this.aggregateType = aggregateType;
-        this.aggregateId = aggregateId;
-        this.eventType = eventType;
-        this.payload = payload;
-        this.createdAt = createdAt;
-        this.processed = processed;
     }
 
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {
             createdAt = Instant.now();
+        }
+        if (status == null) {
+            status = STATUS_PENDING;
         }
     }
 
@@ -66,9 +78,18 @@ public class OutboxEvent {
     public String getPayload() { return payload; }
     public void setPayload(String payload) { this.payload = payload; }
 
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public int getRetryCount() { return retryCount; }
+    public void setRetryCount(int retryCount) { this.retryCount = retryCount; }
+
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
-    public boolean isProcessed() { return processed; }
-    public void setProcessed(boolean processed) { this.processed = processed; }
+    public Instant getPublishedAt() { return publishedAt; }
+    public void setPublishedAt(Instant publishedAt) { this.publishedAt = publishedAt; }
+
+    public String getLastError() { return lastError; }
+    public void setLastError(String lastError) { this.lastError = lastError; }
 }

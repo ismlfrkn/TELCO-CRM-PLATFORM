@@ -15,6 +15,38 @@ spring:
               uri: lb://identity-service
               predicates:
                 - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/roles/**,/api/v1/permissions/**
+            - id: product-catalog-service
+              uri: lb://product-catalog-service
+              predicates:
+                - Path=/api/v1/tariffs/**,/api/v1/addons/**,/api/v1/product-offerings/**
+            - id: subscription-service
+              uri: lb://subscription-service
+              predicates:
+                - Path=/api/v1/subscriptions/**,/api/v1/sim-cards/**,/api/v1/msisdn-pools/**
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/v1/payments/**,/api/v1/wallets/**
+            - id: usage-service
+              uri: lb://usage-service
+              predicates:
+                - Path=/api/v1/usage/**,/api/v1/cdr-events/**,/api/v1/quotas/**
+            - id: billing-service
+              uri: lb://billing-service
+              predicates:
+                - Path=/api/v1/invoices/**,/api/v1/billing/**,/api/v1/bill-cycles/**
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/v1/notifications/**,/api/v1/channels/**,/api/v1/notification-templates/**
+            - id: ticket-service
+              uri: lb://ticket-service
+              predicates:
+                - Path=/api/v1/tickets/**,/api/v1/slas/**
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/v1/orders/**
 
 # jwt.secret configs/application.yaml (global) icinde tanimlidir; identity-service ile ayni
 # degeri tek kaynaktan okur.

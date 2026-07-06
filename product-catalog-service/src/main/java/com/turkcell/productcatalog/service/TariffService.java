@@ -17,14 +17,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TariffService {
 
+    private static final String AGGREGATE_TYPE = "Tariff";
+
     private final TariffRepository tariffRepository;
     private final AddonService addonService;
     private final TariffMapper tariffMapper;
+    private final OutboxEventService outboxEventService;
 
-    public TariffService(TariffRepository tariffRepository, AddonService addonService, TariffMapper tariffMapper) {
+    public TariffService(TariffRepository tariffRepository, AddonService addonService, TariffMapper tariffMapper,
+                          OutboxEventService outboxEventService) {
         this.tariffRepository = tariffRepository;
         this.addonService = addonService;
         this.tariffMapper = tariffMapper;
+        this.outboxEventService = outboxEventService;
     }
 
     public Page<TariffResponse> getAllTariffs(Pageable pageable) {
@@ -55,8 +60,11 @@ public class TariffService {
         tariff.setCurrency(request.getCurrency());
         tariff.setEffectiveFrom(request.getEffectiveFrom());
         tariff.setEffectiveTo(request.getEffectiveTo());
-        
-        return tariffMapper.toResponse(tariffRepository.save(tariff));
+
+        tariff = tariffRepository.save(tariff);
+        TariffResponse response = tariffMapper.toResponse(tariff);
+        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), "TariffCreated", response);
+        return response;
     }
 
     @Transactional
@@ -73,8 +81,11 @@ public class TariffService {
         tariff.setCurrency(request.getCurrency());
         tariff.setEffectiveFrom(request.getEffectiveFrom());
         tariff.setEffectiveTo(request.getEffectiveTo());
-        
-        return tariffMapper.toResponse(tariffRepository.save(tariff));
+
+        tariff = tariffRepository.save(tariff);
+        TariffResponse response = tariffMapper.toResponse(tariff);
+        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), "TariffUpdated", response);
+        return response;
     }
 
     @Transactional
@@ -91,15 +102,19 @@ public class TariffService {
         if (request.getCurrency() != null) tariff.setCurrency(request.getCurrency());
         if (request.getEffectiveFrom() != null) tariff.setEffectiveFrom(request.getEffectiveFrom());
         if (request.getEffectiveTo() != null) tariff.setEffectiveTo(request.getEffectiveTo());
-        
-        return tariffMapper.toResponse(tariffRepository.save(tariff));
+
+        tariff = tariffRepository.save(tariff);
+        TariffResponse response = tariffMapper.toResponse(tariff);
+        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), "TariffUpdated", response);
+        return response;
     }
 
     @Transactional
     public void deleteTariff(String code) {
         Tariff tariff = getTariffByCode(code);
         tariff.setStatus("INACTIVE");
-        tariffRepository.save(tariff);
+        tariff = tariffRepository.save(tariff);
+        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), "TariffDeactivated", tariffMapper.toResponse(tariff));
     }
 
     @Transactional

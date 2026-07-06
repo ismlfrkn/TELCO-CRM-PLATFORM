@@ -17,14 +17,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ProductOfferingService {
 
+    private static final String AGGREGATE_TYPE = "ProductOffering";
+
     private final ProductOfferingRepository productOfferingRepository;
     private final TariffService tariffService;
     private final ProductOfferingMapper productOfferingMapper;
+    private final OutboxEventService outboxEventService;
 
-    public ProductOfferingService(ProductOfferingRepository productOfferingRepository, TariffService tariffService, ProductOfferingMapper productOfferingMapper) {
+    public ProductOfferingService(ProductOfferingRepository productOfferingRepository, TariffService tariffService,
+                                   ProductOfferingMapper productOfferingMapper, OutboxEventService outboxEventService) {
         this.productOfferingRepository = productOfferingRepository;
         this.tariffService = tariffService;
         this.productOfferingMapper = productOfferingMapper;
+        this.outboxEventService = outboxEventService;
     }
 
     public Page<ProductOfferingResponse> getAllProductOfferings(Pageable pageable) {
@@ -53,8 +58,11 @@ public class ProductOfferingService {
         offering.setStatus(request.getStatus());
         offering.setEffectiveFrom(request.getEffectiveFrom());
         offering.setEffectiveTo(request.getEffectiveTo());
-        
-        return productOfferingMapper.toResponse(productOfferingRepository.save(offering));
+
+        offering = productOfferingRepository.save(offering);
+        ProductOfferingResponse response = productOfferingMapper.toResponse(offering);
+        outboxEventService.publish(AGGREGATE_TYPE, offering.getId(), "ProductOfferingCreated", response);
+        return response;
     }
 
     @Transactional
@@ -68,8 +76,11 @@ public class ProductOfferingService {
         offering.setStatus(request.getStatus());
         offering.setEffectiveFrom(request.getEffectiveFrom());
         offering.setEffectiveTo(request.getEffectiveTo());
-        
-        return productOfferingMapper.toResponse(productOfferingRepository.save(offering));
+
+        offering = productOfferingRepository.save(offering);
+        ProductOfferingResponse response = productOfferingMapper.toResponse(offering);
+        outboxEventService.publish(AGGREGATE_TYPE, offering.getId(), "ProductOfferingUpdated", response);
+        return response;
     }
 
     @Transactional
@@ -85,14 +96,19 @@ public class ProductOfferingService {
             Tariff tariff = tariffService.getTariffByCode(request.getTariffCode());
             offering.setTariff(tariff);
         }
-        
-        return productOfferingMapper.toResponse(productOfferingRepository.save(offering));
+
+        offering = productOfferingRepository.save(offering);
+        ProductOfferingResponse response = productOfferingMapper.toResponse(offering);
+        outboxEventService.publish(AGGREGATE_TYPE, offering.getId(), "ProductOfferingUpdated", response);
+        return response;
     }
 
     @Transactional
     public void deleteProductOffering(String code) {
         ProductOffering offering = getProductOfferingByCode(code);
         offering.setStatus("INACTIVE");
-        productOfferingRepository.save(offering);
+        offering = productOfferingRepository.save(offering);
+        outboxEventService.publish(AGGREGATE_TYPE, offering.getId(), "ProductOfferingDeactivated",
+                productOfferingMapper.toResponse(offering));
     }
 }

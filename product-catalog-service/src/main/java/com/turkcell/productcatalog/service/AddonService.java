@@ -17,12 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AddonService {
 
+    private static final String AGGREGATE_TYPE = "Addon";
+
     private final AddonRepository addonRepository;
     private final AddonMapper addonMapper;
+    private final OutboxEventService outboxEventService;
 
-    public AddonService(AddonRepository addonRepository, AddonMapper addonMapper) {
+    public AddonService(AddonRepository addonRepository, AddonMapper addonMapper,
+                         OutboxEventService outboxEventService) {
         this.addonRepository = addonRepository;
         this.addonMapper = addonMapper;
+        this.outboxEventService = outboxEventService;
     }
 
     public Page<AddonResponse> getAllAddons(String tariffCode, Pageable pageable) {
@@ -53,8 +58,11 @@ public class AddonService {
         addon.setValidityDays(request.getValidityDays());
         addon.setCurrency(request.getCurrency());
         addon.setStatus(request.getStatus());
-        
-        return addonMapper.toResponse(addonRepository.save(addon));
+
+        addon = addonRepository.save(addon);
+        AddonResponse response = addonMapper.toResponse(addon);
+        outboxEventService.publish(AGGREGATE_TYPE, addon.getId(), "AddonCreated", response);
+        return response;
     }
 
     @Transactional
@@ -67,8 +75,11 @@ public class AddonService {
         addon.setValidityDays(request.getValidityDays());
         addon.setCurrency(request.getCurrency());
         addon.setStatus(request.getStatus());
-        
-        return addonMapper.toResponse(addonRepository.save(addon));
+
+        addon = addonRepository.save(addon);
+        AddonResponse response = addonMapper.toResponse(addon);
+        outboxEventService.publish(AGGREGATE_TYPE, addon.getId(), "AddonUpdated", response);
+        return response;
     }
 
     @Transactional
@@ -81,14 +92,18 @@ public class AddonService {
         if (request.getValidityDays() != null) addon.setValidityDays(request.getValidityDays());
         if (request.getCurrency() != null) addon.setCurrency(request.getCurrency());
         if (request.getStatus() != null) addon.setStatus(request.getStatus());
-        
-        return addonMapper.toResponse(addonRepository.save(addon));
+
+        addon = addonRepository.save(addon);
+        AddonResponse response = addonMapper.toResponse(addon);
+        outboxEventService.publish(AGGREGATE_TYPE, addon.getId(), "AddonUpdated", response);
+        return response;
     }
 
     @Transactional
     public void deleteAddon(String code) {
         Addon addon = getAddonByCode(code);
         addon.setStatus("INACTIVE");
-        addonRepository.save(addon);
+        addon = addonRepository.save(addon);
+        outboxEventService.publish(AGGREGATE_TYPE, addon.getId(), "AddonDeactivated", addonMapper.toResponse(addon));
     }
 }
