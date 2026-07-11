@@ -2,10 +2,27 @@ server:
   port: 8080
 
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
   cloud:
     gateway:
       server:
         webflux:
+          default-filters:
+            # Bolum 12: kullanici basina 100 req/min. RedisRateLimiter saniye bazli token-bucket
+            # calisir (dakika bazli sabit pencere degil), bu yuzden 100/dk hedefi replenishRate
+            # (saniyede yenilenen token) = ceil(100/60) = 2 ile yaklasik olarak karsilanir (~120/dk
+            # sabit hiz); burstCapacity=100 istegin kendisindeki "100" degerini bir anlik izin
+            # havuzu olarak temsil eder. key-resolver: JWT dogrulanmissa X-User-Id, aksi halde
+            # (ör. /api/v1/auth/**) istemci IP'si (bkz. RateLimiterConfig.userKeyResolver).
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 2
+                redis-rate-limiter.burstCapacity: 100
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
           routes:
             - id: customer-service
               uri: lb://customer-service

@@ -29,6 +29,14 @@
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
 
+		<!-- Bolum 12: kullanici basina rate limiting (RequestRateLimiter + RedisRateLimiter).
+		     Reaktif istemci sart - gateway WebFlux tabanli, identity-service'teki blocking
+		     spring-boot-starter-data-redis burada calismaz. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+		</dependency>
+
 		<!-- JJWT (gateway seviyesinde access token dogrulama; identity-service ile ayni secret/algoritma) -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

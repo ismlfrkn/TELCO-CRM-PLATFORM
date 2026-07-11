@@ -3,12 +3,9 @@ package com.turkcell.productcatalog.dto.response;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
 
-public class TariffResponse {
+public class TariffVersionResponse {
 
-    private UUID id;
     private String code;
     private int version;
     private String name;
@@ -21,12 +18,10 @@ public class TariffResponse {
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
     private String currency;
-    private Instant createdAt;
-    private List<AddonResponse> addons;
 
-    // Getters and Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    // null ise bu, tarifenin su anki (guncel) hali demektir; dolu ise bu versiyonun ne zaman
+    // bir sonraki guncellemeyle degistirildigini gosterir.
+    private Instant supersededAt;
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
@@ -64,9 +59,6 @@ public class TariffResponse {
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
 
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-
-    public List<AddonResponse> getAddons() { return addons; }
-    public void setAddons(List<AddonResponse> addons) { this.addons = addons; }
+    public Instant getSupersededAt() { return supersededAt; }
+    public void setSupersededAt(Instant supersededAt) { this.supersededAt = supersededAt; }
 }

@@ -60,6 +60,7 @@ public class SubscriptionService {
         subscription.setCustomerId(request.getCustomerId());
         subscription.setMsisdn(msisdn);
         subscription.setTariffCode(request.getTariffCode());
+        subscription.setTariffVersion(request.getTariffVersion());
         subscription.setStatus(STATUS_ACTIVE);
         subscription.setActivatedAt(Instant.now());
         subscription = subscriptionRepository.save(subscription);
