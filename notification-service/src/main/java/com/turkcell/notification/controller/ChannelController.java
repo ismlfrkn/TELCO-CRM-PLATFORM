@@ -5,6 +5,7 @@ import com.turkcell.notification.dto.response.ChannelResponse;
 import com.turkcell.notification.service.ChannelService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +24,7 @@ public class ChannelController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public ChannelResponse create(@Valid @RequestBody ChannelCreateRequest request) {
         return channelService.createChannel(request);
     }

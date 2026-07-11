@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,22 +34,26 @@ public class ProductOfferingController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductOfferingResponse create(@Valid @RequestBody ProductOfferingCreateRequest request) {
         return productOfferingService.createProductOffering(request);
     }
 
     @PutMapping("/{code}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductOfferingResponse update(@PathVariable String code, @Valid @RequestBody ProductOfferingUpdateRequest request) {
         return productOfferingService.updateProductOffering(code, request);
     }
 
     @PatchMapping("/{code}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductOfferingResponse patch(@PathVariable String code, @RequestBody ProductOfferingPatchRequest request) {
         return productOfferingService.patchProductOffering(code, request);
     }
 
     @DeleteMapping("/{code}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable String code) {
         productOfferingService.deleteProductOffering(code);
     }

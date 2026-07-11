@@ -4,6 +4,7 @@ import com.turkcell.billing.dto.request.BillingRunRequest;
 import com.turkcell.billing.dto.response.BillingRunResponse;
 import com.turkcell.billing.service.BillingRunService;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ public class BillingRunController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','BILLING_OPERATOR')")
     public BillingRunResponse run(@Valid @RequestBody BillingRunRequest request) {
         return billingRunService.run(request);
     }

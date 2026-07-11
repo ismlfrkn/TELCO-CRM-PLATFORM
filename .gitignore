@@ -45,6 +45,9 @@ buildNumber.properties
 .project
 .settings/
 
+# Environment secrets (bkz. .env.example icin sablon)
+.env
+
 # OS generated files
 .DS_Store
 .DS_Store?

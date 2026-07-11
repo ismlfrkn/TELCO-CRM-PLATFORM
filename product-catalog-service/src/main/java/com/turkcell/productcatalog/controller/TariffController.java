@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,28 +34,33 @@ public class TariffController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public TariffResponse create(@Valid @RequestBody TariffCreateRequest request) {
         return tariffService.createTariff(request);
     }
 
     @PutMapping("/{code}")
+    @PreAuthorize("hasRole('ADMIN')")
     public TariffResponse update(@PathVariable String code, @Valid @RequestBody TariffUpdateRequest request) {
         return tariffService.updateTariff(code, request);
     }
 
     @PatchMapping("/{code}")
+    @PreAuthorize("hasRole('ADMIN')")
     public TariffResponse patch(@PathVariable String code, @RequestBody TariffPatchRequest request) {
         return tariffService.patchTariff(code, request);
     }
 
     @DeleteMapping("/{code}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable String code) {
         tariffService.deleteTariff(code);
     }
 
     @PostMapping("/{code}/addons/{addonCode}")
     @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasRole('ADMIN')")
     public void linkAddon(@PathVariable String code, @PathVariable String addonCode) {
         tariffService.linkAddonToTariff(code, addonCode);
     }

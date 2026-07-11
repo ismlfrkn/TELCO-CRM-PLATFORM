@@ -6,8 +6,8 @@ spring:
     name: order-service
   datasource:
     url: jdbc:postgresql://localhost:5433/order_db
-    username: telco_admin
-    password: telco_password
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

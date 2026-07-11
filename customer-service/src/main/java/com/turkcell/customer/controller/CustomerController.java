@@ -12,6 +12,7 @@ import com.turkcell.customer.service.CustomerService;
 import com.turkcell.customer.service.DocumentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,11 +55,13 @@ public class CustomerController {
     }
 
     @PostMapping("/{id}/kyc/approve")
+    @PreAuthorize("hasRole('ADMIN')")
     public CustomerResponse approveKyc(@PathVariable UUID id) {
         return customerService.approveKyc(id);
     }
 
     @PostMapping("/{id}/kyc/reject")
+    @PreAuthorize("hasRole('ADMIN')")
     public CustomerResponse rejectKyc(@PathVariable UUID id) {
         return customerService.rejectKyc(id);
     }

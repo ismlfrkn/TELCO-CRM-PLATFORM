@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -53,11 +54,13 @@ public class InvoiceController {
     }
 
     @PostMapping("/{id}/mark-paid")
+    @PreAuthorize("hasAnyRole('ADMIN','BILLING_OPERATOR')")
     public InvoiceResponse markPaid(@PathVariable UUID id) {
         return invoiceService.markPaid(id);
     }
 
     @PostMapping("/{id}/mark-overdue")
+    @PreAuthorize("hasAnyRole('ADMIN','BILLING_OPERATOR')")
     public InvoiceResponse markOverdue(@PathVariable UUID id) {
         return invoiceService.markOverdue(id);
     }

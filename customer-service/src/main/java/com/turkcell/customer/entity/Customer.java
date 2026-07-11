@@ -1,6 +1,7 @@
 package com.turkcell.customer.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.turkcell.customer.crypto.IdentityNumberConverter;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -26,7 +27,8 @@ public class Customer {
     private String lastName;
 
     @Column(name = "identity_number", nullable = false, unique = true)
-    private String identityNumber; // TCKN (INDIVIDUAL) or VKN (CORPORATE)
+    @Convert(converter = IdentityNumberConverter.class)
+    private String identityNumber; // TCKN (INDIVIDUAL) or VKN (CORPORATE) - AES-256-GCM ile sifreli saklanir
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
