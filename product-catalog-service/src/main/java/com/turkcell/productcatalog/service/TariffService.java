@@ -14,6 +14,8 @@ import com.turkcell.productcatalog.mapper.TariffMapper;
 import com.turkcell.productcatalog.mapper.TariffVersionMapper;
 import com.turkcell.productcatalog.repository.TariffRepository;
 import com.turkcell.productcatalog.repository.TariffVersionRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,7 @@ public class TariffService {
                 .map(tariffMapper::toResponse);
     }
 
+    @Cacheable(cacheNames = "tariffs", key = "#code")
     public TariffResponse getTariffResponseByCode(String code) {
         return tariffMapper.toResponse(getTariffByCode(code));
     }
@@ -80,6 +83,7 @@ public class TariffService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "tariffs", key = "#code")
     public TariffResponse updateTariff(String code, TariffUpdateRequest request) {
         Tariff tariff = getTariffByCode(code);
         archiveCurrentVersion(tariff);
@@ -103,6 +107,7 @@ public class TariffService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "tariffs", key = "#code")
     public TariffResponse patchTariff(String code, TariffPatchRequest request) {
         Tariff tariff = getTariffByCode(code);
         archiveCurrentVersion(tariff);
@@ -187,6 +192,7 @@ public class TariffService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "tariffs", key = "#code")
     public void deleteTariff(String code) {
         Tariff tariff = getTariffByCode(code);
         tariff.setStatus("INACTIVE");
@@ -195,6 +201,7 @@ public class TariffService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "tariffs", key = "#tariffCode")
     public void linkAddonToTariff(String tariffCode, String addonCode) {
         Tariff tariff = getTariffByCode(tariffCode);
         Addon addon = addonService.getAddonByCode(addonCode);

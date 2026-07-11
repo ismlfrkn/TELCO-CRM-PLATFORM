@@ -15,11 +15,14 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -111,6 +114,24 @@ class CustomerControllerWebMvcTest {
                 .andExpect(jsonPath("$.errors.lastName").exists())
                 .andExpect(jsonPath("$.errors.identityNumber").exists())
                 .andExpect(jsonPath("$.errors.email").exists());
+    }
+
+    @Test
+    void getAll_returnsPaginatedCustomerList() throws Exception {
+        CustomerResponse response = new CustomerResponse();
+        response.setId(UUID.randomUUID());
+        response.setFirstName("Ada");
+        response.setLastName("Lovelace");
+        response.setIdentityNumber("10000000146");
+        response.setStatus("ACTIVE");
+
+        when(customerService.getAllCustomers(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(response)));
+
+        mockMvc.perform(get("/api/v1/customers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].firstName").value("Ada"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test

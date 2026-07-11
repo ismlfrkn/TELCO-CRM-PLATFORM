@@ -11,6 +11,8 @@ import com.turkcell.customer.service.AddressService;
 import com.turkcell.customer.service.CustomerService;
 import com.turkcell.customer.service.DocumentService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +38,12 @@ public class CustomerController {
     @ResponseStatus(HttpStatus.CREATED)
     public CustomerResponse create(@Valid @RequestBody CustomerCreateRequest request) {
         return customerService.createCustomer(request);
+    }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','CALL_CENTER_AGENT')")
+    public Page<CustomerResponse> getAll(Pageable pageable) {
+        return customerService.getAllCustomers(pageable);
     }
 
     @GetMapping("/{id}")

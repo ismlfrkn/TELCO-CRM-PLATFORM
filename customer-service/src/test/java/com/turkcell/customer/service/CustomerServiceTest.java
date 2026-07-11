@@ -13,7 +13,10 @@ import com.turkcell.customer.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -161,6 +164,19 @@ class CustomerServiceTest {
         assertThat(customer.isDeleted()).isTrue();
         verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerDeleted"), any());
         verify(auditLogService).record(eq("CUSTOMER_DELETED"), eq("Customer"), eq(customer.getId()), eq(null), any());
+    }
+
+    @Test
+    void getAllCustomers_returnsMappedPageExcludingDeleted() {
+        Customer customer = pendingCustomer();
+        Pageable pageable = Pageable.unpaged();
+        when(customerRepository.findAllByDeletedFalse(pageable))
+                .thenReturn(new PageImpl<>(List.of(customer)));
+
+        var page = customerService.getAllCustomers(pageable);
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getIdentityNumber()).isEqualTo(VALID_TCKN);
     }
 
     @Test
