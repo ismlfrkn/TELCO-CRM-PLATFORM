@@ -86,6 +86,30 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
+        <!-- Resilience4j: senkron saga'nin en kirilgan noktasi olan Feign zincirine
+             circuit breaker + retry (Bolum 10) -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <!-- resilience4j-spring-boot3'un fallback autoconfig'i (FallbackConfigurationOnMissingBean,
+             kendisi CircuitBreakerAutoConfiguration/RetryAutoConfiguration tarafindan @Import ile
+             getiriliyor, biz kullanmasak da devre disi birakilamiyor) RxJava3FallbackDecorator'i
+             icerdigi metod imzalari yuzunden eagerly class-load ediyor; bu tip classpath'te
+             olmadan Class.getDeclaredMethods() NoClassDefFoundError firlatip context'in tamamini
+             dusuruyor. Kendi kodumuzda RxJava3 hic kullanilmiyor - tek amaci bu sinifin
+             yuklenebilmesini saglamak. -->
+        <dependency>
+            <groupId>io.reactivex.rxjava3</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>3.1.8</version>
+        </dependency>
+
         <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>

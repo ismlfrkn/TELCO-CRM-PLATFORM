@@ -15,3 +15,55 @@ eureka:
 
 gateway:
   internal-secret: test-secret
+
+# configs/order-service/application.yml ile birebir ayni (config-server test'te devre disi oldugu
+# icin oradan hic gelmiyor) - GatewayResilienceTest gercek/uretim degerlerini dogrulasin diye.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - feign.FeignException$InternalServerError
+          - feign.FeignException$BadGateway
+          - feign.FeignException$ServiceUnavailable
+          - feign.FeignException$GatewayTimeout
+          - feign.RetryableException
+          - java.io.IOException
+    instances:
+      customer-service:
+        baseConfig: default
+      product-catalog-service:
+        baseConfig: default
+      payment-service:
+        baseConfig: default
+      subscription-service:
+        baseConfig: default
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 500ms
+        retryExceptions:
+          - feign.FeignException$InternalServerError
+          - feign.FeignException$BadGateway
+          - feign.FeignException$ServiceUnavailable
+          - feign.FeignException$GatewayTimeout
+          - feign.RetryableException
+          - java.io.IOException
+    instances:
+      customer-service:
+        baseConfig: default
+      product-catalog-service:
+        baseConfig: default
+      payment-service:
+        baseConfig: default
+        maxAttempts: 2
+        waitDuration: 1s

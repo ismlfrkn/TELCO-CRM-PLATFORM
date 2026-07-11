@@ -1,6 +1,10 @@
 package com.turkcell.order.service;
 
 import com.turkcell.order.client.*;
+import com.turkcell.order.client.gateway.CustomerServiceGateway;
+import com.turkcell.order.client.gateway.PaymentServiceGateway;
+import com.turkcell.order.client.gateway.ProductCatalogServiceGateway;
+import com.turkcell.order.client.gateway.SubscriptionServiceGateway;
 import com.turkcell.order.dto.request.OrderCreateRequest;
 import com.turkcell.order.dto.request.OrderItemRequest;
 import com.turkcell.order.dto.response.OrderItemResponse;
@@ -46,28 +50,28 @@ public class OrderService {
     private final IdempotencyKeyService idempotencyKeyService;
     private final OutboxEventService outboxEventService;
     private final OrderMapper orderMapper;
-    private final CustomerServiceClient customerServiceClient;
-    private final ProductCatalogServiceClient productCatalogServiceClient;
-    private final PaymentServiceClient paymentServiceClient;
-    private final SubscriptionServiceClient subscriptionServiceClient;
+    private final CustomerServiceGateway customerServiceGateway;
+    private final ProductCatalogServiceGateway productCatalogServiceGateway;
+    private final PaymentServiceGateway paymentServiceGateway;
+    private final SubscriptionServiceGateway subscriptionServiceGateway;
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
                          OrderPersistenceService orderPersistenceService, IdempotencyKeyService idempotencyKeyService,
                          OutboxEventService outboxEventService, OrderMapper orderMapper,
-                         CustomerServiceClient customerServiceClient,
-                         ProductCatalogServiceClient productCatalogServiceClient,
-                         PaymentServiceClient paymentServiceClient,
-                         SubscriptionServiceClient subscriptionServiceClient) {
+                         CustomerServiceGateway customerServiceGateway,
+                         ProductCatalogServiceGateway productCatalogServiceGateway,
+                         PaymentServiceGateway paymentServiceGateway,
+                         SubscriptionServiceGateway subscriptionServiceGateway) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderPersistenceService = orderPersistenceService;
         this.idempotencyKeyService = idempotencyKeyService;
         this.outboxEventService = outboxEventService;
         this.orderMapper = orderMapper;
-        this.customerServiceClient = customerServiceClient;
-        this.productCatalogServiceClient = productCatalogServiceClient;
-        this.paymentServiceClient = paymentServiceClient;
-        this.subscriptionServiceClient = subscriptionServiceClient;
+        this.customerServiceGateway = customerServiceGateway;
+        this.productCatalogServiceGateway = productCatalogServiceGateway;
+        this.paymentServiceGateway = paymentServiceGateway;
+        this.subscriptionServiceGateway = subscriptionServiceGateway;
     }
 
     public OrderResponse createOrder(String idempotencyKey, OrderCreateRequest request) {
@@ -93,7 +97,7 @@ public class OrderService {
         outboxEventService.publish(AGGREGATE_TYPE, order.getId(), "OrderCreated", toOrderResponse(order, items));
 
         orderPersistenceService.markAwaitingPayment(order.getId());
-        PaymentClientResponse payment = paymentServiceClient.createPayment(
+        PaymentClientResponse payment = paymentServiceGateway.createPayment(
                 "order-payment-" + idempotencyKey, paymentRequest(order));
 
         if (!"COMPLETED".equals(payment.getStatus())) {
@@ -109,12 +113,12 @@ public class OrderService {
 
         if (tariffItem.isPresent()) {
             try {
-                subscriptionServiceClient.createSubscription(
+                subscriptionServiceGateway.createSubscription(
                         subscriptionRequest(request.getCustomerId(), tariffItem.get().getProductCode()));
             } catch (Exception ex) {
                 log.warn("Subscription activation failed for order {}, triggering payment refund compensation",
                         order.getId(), ex);
-                paymentServiceClient.refund(payment.getId());
+                paymentServiceGateway.refund(payment.getId());
                 orderPersistenceService.cancelOrder(order.getId());
                 outboxEventService.publish(AGGREGATE_TYPE, order.getId(), "OrderCancelled", toOrderResponse(order, items));
                 return toOrderResponse(order, items);
@@ -155,7 +159,7 @@ public class OrderService {
 
     private void validateCustomerExists(UUID customerId) {
         try {
-            customerServiceClient.getCustomer(customerId);
+            customerServiceGateway.getCustomer(customerId);
         } catch (FeignException.NotFound ex) {
             throw new CustomerNotFoundException("Customer not found with id: " + customerId);
         }
@@ -182,7 +186,7 @@ public class OrderService {
 
     private BigDecimal resolveTariffPrice(String code) {
         try {
-            return productCatalogServiceClient.getTariff(code).getMonthlyFee();
+            return productCatalogServiceGateway.getTariff(code).getMonthlyFee();
         } catch (FeignException.NotFound ex) {
             throw new ProductNotFoundException("Tariff not found with code: " + code);
         }
@@ -190,7 +194,7 @@ public class OrderService {
 
     private BigDecimal resolveAddonPrice(String code) {
         try {
-            return productCatalogServiceClient.getAddon(code).getPrice();
+            return productCatalogServiceGateway.getAddon(code).getPrice();
         } catch (FeignException.NotFound ex) {
             throw new ProductNotFoundException("Addon not found with code: " + code);
         }

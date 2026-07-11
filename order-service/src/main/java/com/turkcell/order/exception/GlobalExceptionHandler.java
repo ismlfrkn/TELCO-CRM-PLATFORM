@@ -1,6 +1,7 @@
 package com.turkcell.order.exception;
 
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +75,17 @@ public class GlobalExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setType(URI.create("https://telco.example/errors/invalid-order-state"));
         problemDetail.setTitle("Invalid order state");
+        addCommonProperties(problemDetail);
+        return problemDetail;
+    }
+
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ProblemDetail handleCallNotPermittedException(CallNotPermittedException ex) {
+        log.error("Circuit breaker '{}' is OPEN, rejecting call without hitting the downstream service", ex.getCausingCircuitBreakerName());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
+                "A downstream service is temporarily unavailable, please retry later");
+        problemDetail.setType(URI.create("https://telco.example/errors/downstream-service-unavailable"));
+        problemDetail.setTitle("Downstream service unavailable");
         addCommonProperties(problemDetail);
         return problemDetail;
     }
