@@ -2,13 +2,13 @@ package com.turkcell.order.service;
 
 import com.turkcell.order.client.AddonClientDto;
 import com.turkcell.order.client.CustomerClientDto;
-import com.turkcell.order.client.CustomerServiceClient;
 import com.turkcell.order.client.PaymentClientResponse;
-import com.turkcell.order.client.PaymentServiceClient;
-import com.turkcell.order.client.ProductCatalogServiceClient;
 import com.turkcell.order.client.SubscriptionClientResponse;
-import com.turkcell.order.client.SubscriptionServiceClient;
 import com.turkcell.order.client.TariffClientDto;
+import com.turkcell.order.client.gateway.CustomerServiceGateway;
+import com.turkcell.order.client.gateway.PaymentServiceGateway;
+import com.turkcell.order.client.gateway.ProductCatalogServiceGateway;
+import com.turkcell.order.client.gateway.SubscriptionServiceGateway;
 import com.turkcell.order.dto.request.OrderCreateRequest;
 import com.turkcell.order.dto.request.OrderItemRequest;
 import com.turkcell.order.dto.response.OrderResponse;
@@ -50,10 +50,10 @@ class OrderServiceTest {
     private OrderPersistenceService orderPersistenceService;
     private IdempotencyKeyService idempotencyKeyService;
     private OutboxEventService outboxEventService;
-    private CustomerServiceClient customerServiceClient;
-    private ProductCatalogServiceClient productCatalogServiceClient;
-    private PaymentServiceClient paymentServiceClient;
-    private SubscriptionServiceClient subscriptionServiceClient;
+    private CustomerServiceGateway customerServiceGateway;
+    private ProductCatalogServiceGateway productCatalogServiceGateway;
+    private PaymentServiceGateway paymentServiceGateway;
+    private SubscriptionServiceGateway subscriptionServiceGateway;
     private OrderService orderService;
 
     @BeforeEach
@@ -63,22 +63,22 @@ class OrderServiceTest {
         orderPersistenceService = mock(OrderPersistenceService.class);
         idempotencyKeyService = mock(IdempotencyKeyService.class);
         outboxEventService = mock(OutboxEventService.class);
-        customerServiceClient = mock(CustomerServiceClient.class);
-        productCatalogServiceClient = mock(ProductCatalogServiceClient.class);
-        paymentServiceClient = mock(PaymentServiceClient.class);
-        subscriptionServiceClient = mock(SubscriptionServiceClient.class);
+        customerServiceGateway = mock(CustomerServiceGateway.class);
+        productCatalogServiceGateway = mock(ProductCatalogServiceGateway.class);
+        paymentServiceGateway = mock(PaymentServiceGateway.class);
+        subscriptionServiceGateway = mock(SubscriptionServiceGateway.class);
         OrderMapper orderMapper = Mappers.getMapper(OrderMapper.class);
 
         orderService = new OrderService(orderRepository, orderItemRepository, orderPersistenceService,
-                idempotencyKeyService, outboxEventService, orderMapper, customerServiceClient,
-                productCatalogServiceClient, paymentServiceClient, subscriptionServiceClient);
+                idempotencyKeyService, outboxEventService, orderMapper, customerServiceGateway,
+                productCatalogServiceGateway, paymentServiceGateway, subscriptionServiceGateway);
 
         when(idempotencyKeyService.hash(any())).thenReturn("request-hash");
         when(idempotencyKeyService.tryClaim(any(), any(), eq(OrderResponse.class))).thenReturn(Optional.empty());
 
         CustomerClientDto customer = new CustomerClientDto();
         customer.setStatus("ACTIVE");
-        when(customerServiceClient.getCustomer(any())).thenReturn(customer);
+        when(customerServiceGateway.getCustomer(any())).thenReturn(customer);
     }
 
     @Test
@@ -90,7 +90,7 @@ class OrderServiceTest {
         TariffClientDto tariff = new TariffClientDto();
         tariff.setCode("TARIFF100");
         tariff.setMonthlyFee(new BigDecimal("100.00"));
-        when(productCatalogServiceClient.getTariff("TARIFF100")).thenReturn(tariff);
+        when(productCatalogServiceGateway.getTariff("TARIFF100")).thenReturn(tariff);
 
         when(orderPersistenceService.createOrderRecord(eq(customerId), eq(new BigDecimal("100.00")), any()))
                 .thenReturn(order);
@@ -98,16 +98,16 @@ class OrderServiceTest {
         PaymentClientResponse payment = new PaymentClientResponse();
         payment.setId(UUID.randomUUID());
         payment.setStatus("COMPLETED");
-        when(paymentServiceClient.createPayment(any(), any())).thenReturn(payment);
+        when(paymentServiceGateway.createPayment(any(), any())).thenReturn(payment);
 
-        when(subscriptionServiceClient.createSubscription(any())).thenReturn(new SubscriptionClientResponse());
+        when(subscriptionServiceGateway.createSubscription(any())).thenReturn(new SubscriptionClientResponse());
 
         OrderResponse response = orderService.createOrder("idem-key-1", request);
 
         assertThat(response.getId()).isEqualTo(order.getId());
         verify(orderPersistenceService).markOrderFulfilled(order.getId());
         verify(orderPersistenceService, never()).cancelOrder(any());
-        verify(subscriptionServiceClient).createSubscription(any());
+        verify(subscriptionServiceGateway).createSubscription(any());
         verify(outboxEventService).publish(eq("Order"), eq(order.getId()), eq("OrderCreated"), any());
         verify(outboxEventService).publish(eq("Order"), eq(order.getId()), eq("OrderConfirmed"), any());
         verify(idempotencyKeyService).complete(eq("idem-key-1"), any(), eq(201));
@@ -122,7 +122,7 @@ class OrderServiceTest {
         AddonClientDto addon = new AddonClientDto();
         addon.setCode("ADDON5GB");
         addon.setPrice(new BigDecimal("50.00"));
-        when(productCatalogServiceClient.getAddon("ADDON5GB")).thenReturn(addon);
+        when(productCatalogServiceGateway.getAddon("ADDON5GB")).thenReturn(addon);
 
         when(orderPersistenceService.createOrderRecord(eq(customerId), eq(new BigDecimal("50.00")), any()))
                 .thenReturn(order);
@@ -130,13 +130,13 @@ class OrderServiceTest {
         PaymentClientResponse payment = new PaymentClientResponse();
         payment.setId(UUID.randomUUID());
         payment.setStatus("FAILED");
-        when(paymentServiceClient.createPayment(any(), any())).thenReturn(payment);
+        when(paymentServiceGateway.createPayment(any(), any())).thenReturn(payment);
 
         orderService.createOrder("idem-key-2", request);
 
         verify(orderPersistenceService).cancelOrder(order.getId());
         verify(outboxEventService).publish(eq("Order"), eq(order.getId()), eq("OrderCancelled"), any());
-        verifyNoInteractions(subscriptionServiceClient);
+        verifyNoInteractions(subscriptionServiceGateway);
         verify(orderPersistenceService, never()).markOrderFulfilled(any());
     }
 
@@ -149,7 +149,7 @@ class OrderServiceTest {
         TariffClientDto tariff = new TariffClientDto();
         tariff.setCode("TARIFF100");
         tariff.setMonthlyFee(new BigDecimal("100.00"));
-        when(productCatalogServiceClient.getTariff("TARIFF100")).thenReturn(tariff);
+        when(productCatalogServiceGateway.getTariff("TARIFF100")).thenReturn(tariff);
 
         when(orderPersistenceService.createOrderRecord(eq(customerId), eq(new BigDecimal("100.00")), any()))
                 .thenReturn(order);
@@ -158,12 +158,12 @@ class OrderServiceTest {
         PaymentClientResponse payment = new PaymentClientResponse();
         payment.setId(paymentId);
         payment.setStatus("COMPLETED");
-        when(paymentServiceClient.createPayment(any(), any())).thenReturn(payment);
-        when(subscriptionServiceClient.createSubscription(any())).thenThrow(new RuntimeException("subscription down"));
+        when(paymentServiceGateway.createPayment(any(), any())).thenReturn(payment);
+        when(subscriptionServiceGateway.createSubscription(any())).thenThrow(new RuntimeException("subscription down"));
 
         orderService.createOrder("idem-key-3", request);
 
-        verify(paymentServiceClient).refund(paymentId);
+        verify(paymentServiceGateway).refund(paymentId);
         verify(orderPersistenceService).cancelOrder(order.getId());
         verify(outboxEventService).publish(eq("Order"), eq(order.getId()), eq("OrderCancelled"), any());
         verify(orderPersistenceService, never()).markOrderFulfilled(any());
@@ -171,24 +171,24 @@ class OrderServiceTest {
 
     @Test
     void createOrder_whenCustomerNotFound_throwsBeforeTouchingPersistenceOrPayment() {
-        when(customerServiceClient.getCustomer(any())).thenThrow(notFound());
+        when(customerServiceGateway.getCustomer(any())).thenThrow(notFound());
         OrderCreateRequest request = requestWithTariff(UUID.randomUUID(), "TARIFF100");
 
         assertThatThrownBy(() -> orderService.createOrder("idem-key-4", request))
                 .isInstanceOf(CustomerNotFoundException.class);
 
-        verifyNoInteractions(orderPersistenceService, paymentServiceClient, subscriptionServiceClient);
+        verifyNoInteractions(orderPersistenceService, paymentServiceGateway, subscriptionServiceGateway);
     }
 
     @Test
     void createOrder_whenTariffNotFound_throwsProductNotFoundException() {
-        when(productCatalogServiceClient.getTariff("MISSING")).thenThrow(notFound());
+        when(productCatalogServiceGateway.getTariff("MISSING")).thenThrow(notFound());
         OrderCreateRequest request = requestWithTariff(UUID.randomUUID(), "MISSING");
 
         assertThatThrownBy(() -> orderService.createOrder("idem-key-5", request))
                 .isInstanceOf(ProductNotFoundException.class);
 
-        verifyNoInteractions(orderPersistenceService, paymentServiceClient, subscriptionServiceClient);
+        verifyNoInteractions(orderPersistenceService, paymentServiceGateway, subscriptionServiceGateway);
     }
 
     @Test
@@ -203,7 +203,7 @@ class OrderServiceTest {
         OrderResponse response = orderService.createOrder("idem-key-6", request);
 
         assertThat(response).isSameAs(cached);
-        verifyNoInteractions(customerServiceClient, orderPersistenceService, paymentServiceClient, subscriptionServiceClient);
+        verifyNoInteractions(customerServiceGateway, orderPersistenceService, paymentServiceGateway, subscriptionServiceGateway);
         verify(idempotencyKeyService, never()).complete(any(), any(), anyInt());
     }
 

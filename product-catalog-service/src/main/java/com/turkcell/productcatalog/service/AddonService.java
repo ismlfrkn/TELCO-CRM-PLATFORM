@@ -9,6 +9,8 @@ import com.turkcell.productcatalog.exception.AddonNotFoundException;
 import com.turkcell.productcatalog.mapper.AddonMapper;
 import com.turkcell.productcatalog.exception.AddonNotFoundException;
 import com.turkcell.productcatalog.repository.AddonRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class AddonService {
                 .map(addonMapper::toResponse);
     }
 
+    @Cacheable(cacheNames = "addons", key = "#code")
     public AddonResponse getAddonResponseByCode(String code) {
         return addonMapper.toResponse(getAddonByCode(code));
     }
@@ -66,6 +69,7 @@ public class AddonService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "addons", key = "#code")
     public AddonResponse updateAddon(String code, AddonUpdateRequest request) {
         Addon addon = getAddonByCode(code);
         
@@ -83,6 +87,7 @@ public class AddonService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "addons", key = "#code")
     public AddonResponse patchAddon(String code, AddonPatchRequest request) {
         Addon addon = getAddonByCode(code);
         
@@ -100,6 +105,7 @@ public class AddonService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "addons", key = "#code")
     public void deleteAddon(String code) {
         Addon addon = getAddonByCode(code);
         addon.setStatus("INACTIVE");

@@ -11,6 +11,8 @@ import com.turkcell.customer.exception.InvalidKycTransitionException;
 import com.turkcell.customer.mapper.CustomerMapper;
 import com.turkcell.customer.repository.CustomerRepository;
 import com.turkcell.customer.validation.IdentityNumberValidator;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +66,10 @@ public class CustomerService {
 
     public CustomerResponse getCustomerResponseById(UUID id) {
         return customerMapper.toResponse(getCustomerById(id));
+    }
+
+    public Page<CustomerResponse> getAllCustomers(Pageable pageable) {
+        return customerRepository.findAllByDeletedFalse(pageable).map(customerMapper::toResponse);
     }
 
     public Customer getCustomerById(UUID id) {
