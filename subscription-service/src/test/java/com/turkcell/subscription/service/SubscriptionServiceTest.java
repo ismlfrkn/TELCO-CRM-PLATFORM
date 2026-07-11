@@ -63,6 +63,31 @@ class SubscriptionServiceTest {
     }
 
     @Test
+    void createSubscription_withTariffVersion_storesItOnTheSubscription() {
+        SubscriptionCreateRequest request = new SubscriptionCreateRequest();
+        request.setCustomerId(UUID.randomUUID());
+        request.setTariffCode("TARIFF-1");
+        request.setTariffVersion(3);
+        when(msisdnPoolService.allocateNext()).thenReturn("905550000001");
+
+        SubscriptionResponse response = subscriptionService.createSubscription(request);
+
+        assertThat(response.getTariffVersion()).isEqualTo(3);
+    }
+
+    @Test
+    void createSubscription_withoutTariffVersion_leavesItNull() {
+        SubscriptionCreateRequest request = new SubscriptionCreateRequest();
+        request.setCustomerId(UUID.randomUUID());
+        request.setTariffCode("TARIFF-1");
+        when(msisdnPoolService.allocateNext()).thenReturn("905550000001");
+
+        SubscriptionResponse response = subscriptionService.createSubscription(request);
+
+        assertThat(response.getTariffVersion()).isNull();
+    }
+
+    @Test
     void createSubscription_withExplicitMsisdn_allocatesSpecificNumber() {
         SubscriptionCreateRequest request = new SubscriptionCreateRequest();
         request.setCustomerId(UUID.randomUUID());

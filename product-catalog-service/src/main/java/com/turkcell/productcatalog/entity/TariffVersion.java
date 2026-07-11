@@ -1,32 +1,88 @@
-package com.turkcell.productcatalog.dto.response;
+package com.turkcell.productcatalog.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
-public class TariffResponse {
+/**
+ * FR-08: bir Tariff satiri her updateTariff/patchTariff'te degistirilmeden once buraya
+ * degismez (immutable) bir anlik goruntu olarak kopyalanir. Bu satirlar hicbir zaman
+ * guncellenmez - sadece TariffService.archiveCurrentVersion tarafindan eklenir.
+ */
+@Entity
+@Table(name = "tariff_versions")
+public class TariffVersion {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    private String code;
-    private int version;
-    private String name;
-    private String type;
-    private BigDecimal monthlyFee;
-    private int minutesIncluded;
-    private int smsIncluded;
-    private int dataMbIncluded;
-    private String status;
-    private LocalDate effectiveFrom;
-    private LocalDate effectiveTo;
-    private String currency;
-    private Instant createdAt;
-    private List<AddonResponse> addons;
 
-    // Getters and Setters
+    @Column(name = "tariff_id", nullable = false)
+    private UUID tariffId;
+
+    @Column(nullable = false)
+    private String code;
+
+    @Column(nullable = false)
+    private int version;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String type;
+
+    @Column(name = "monthly_fee", nullable = false)
+    private BigDecimal monthlyFee;
+
+    @Column(name = "minutes_included", nullable = false)
+    private int minutesIncluded;
+
+    @Column(name = "sms_included", nullable = false)
+    private int smsIncluded;
+
+    @Column(name = "data_mb_included", nullable = false)
+    private int dataMbIncluded;
+
+    @Column(nullable = false)
+    private String status;
+
+    @Column(name = "effective_from", nullable = false)
+    private LocalDate effectiveFrom;
+
+    @Column(name = "effective_to")
+    private LocalDate effectiveTo;
+
+    @Column(nullable = false, length = 3)
+    private String currency;
+
+    @Column(name = "superseded_at", nullable = false)
+    private Instant supersededAt;
+
+    public TariffVersion() {
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (supersededAt == null) {
+            supersededAt = Instant.now();
+        }
+    }
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
+
+    public UUID getTariffId() { return tariffId; }
+    public void setTariffId(UUID tariffId) { this.tariffId = tariffId; }
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
@@ -64,9 +120,6 @@ public class TariffResponse {
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
 
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-
-    public List<AddonResponse> getAddons() { return addons; }
-    public void setAddons(List<AddonResponse> addons) { this.addons = addons; }
+    public Instant getSupersededAt() { return supersededAt; }
+    public void setSupersededAt(Instant supersededAt) { this.supersededAt = supersededAt; }
 }

@@ -27,6 +27,15 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(TariffVersionNotFoundException.class)
+    public ProblemDetail handleTariffVersionNotFoundException(TariffVersionNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setType(URI.create("https://telco.example/errors/tariff-version-not-found"));
+        problemDetail.setTitle("Tariff version not found");
+        addCommonProperties(problemDetail);
+        return problemDetail;
+    }
+
     @ExceptionHandler(AddonNotFoundException.class)
     public ProblemDetail handleAddonNotFoundException(AddonNotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());

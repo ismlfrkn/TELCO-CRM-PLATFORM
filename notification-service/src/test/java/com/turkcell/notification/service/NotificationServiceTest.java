@@ -32,6 +32,7 @@ class NotificationServiceTest {
     private NotificationRepository notificationRepository;
     private ChannelService channelService;
     private NotificationTemplateService notificationTemplateService;
+    private NotificationPreferenceService notificationPreferenceService;
     private OutboxEventService outboxEventService;
     private NotificationService notificationService;
 
@@ -40,11 +41,13 @@ class NotificationServiceTest {
         notificationRepository = mock(NotificationRepository.class);
         channelService = mock(ChannelService.class);
         notificationTemplateService = mock(NotificationTemplateService.class);
+        notificationPreferenceService = mock(NotificationPreferenceService.class);
         outboxEventService = mock(OutboxEventService.class);
         NotificationMapper notificationMapper = Mappers.getMapper(NotificationMapper.class);
 
         notificationService = new NotificationService(notificationRepository, channelService,
-                notificationTemplateService, notificationMapper, outboxEventService, new ObjectMapper());
+                notificationTemplateService, notificationPreferenceService, notificationMapper,
+                outboxEventService, new ObjectMapper());
 
         when(notificationRepository.save(any())).thenAnswer(inv -> {
             Notification notification = inv.getArgument(0);
@@ -53,6 +56,7 @@ class NotificationServiceTest {
             }
             return notification;
         });
+        when(notificationPreferenceService.isOptedIn(any(), any())).thenReturn(true);
     }
 
     @Test
@@ -105,6 +109,30 @@ class NotificationServiceTest {
         assertThatThrownBy(() -> notificationService.send(request))
                 .isInstanceOf(NotificationTemplateNotFoundException.class);
         verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    void send_whenUserOptedOutOfChannel_savesAsSkippedAndDoesNotPublishOrDispatch() {
+        Channel channel = channelWith("SMS");
+        NotificationTemplate template = templateWith(channel.getId(), "Merhaba {{firstName}}, hattiniz aktif.");
+        when(channelService.getChannelByCode("SMS")).thenReturn(channel);
+        when(notificationTemplateService.getTemplate("WELCOME_SMS", channel.getId(), "tr-TR")).thenReturn(template);
+        UUID userId = UUID.randomUUID();
+        when(notificationPreferenceService.isOptedIn(userId, channel.getId())).thenReturn(false);
+
+        NotificationSendRequest request = new NotificationSendRequest();
+        request.setUserId(userId);
+        request.setTemplateCode("WELCOME_SMS");
+        request.setChannelCode("SMS");
+        request.setLocale("tr-TR");
+        request.setPayload(Map.of("firstName", "Serhat"));
+
+        NotificationResponse response = notificationService.send(request);
+
+        assertThat(response.getStatus()).isEqualTo(Notification.STATUS_SKIPPED);
+        assertThat(response.getSentAt()).isNull();
+        verify(notificationRepository).save(any());
+        verifyNoInteractions(outboxEventService);
     }
 
     @Test

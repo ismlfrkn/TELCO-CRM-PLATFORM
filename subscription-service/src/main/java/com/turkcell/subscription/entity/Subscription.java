@@ -28,6 +28,13 @@ public class Subscription {
     @Column(name = "tariff_code", nullable = false)
     private String tariffCode; // product-catalog-service'e ait, cross-service referans (FK degil)
 
+    // FR-08: abonenin baglandigi tarifenin hangi versiyonuna sabitlendigi (product-catalog-service
+    // Tariff.version). Caller (ör. order-service) tarafindan siparis anindaki versiyonla doldurulmasi
+    // beklenir; bu servis tarife/versiyonu dogrulamaz (bkz. sinif javadoc'u). Bos birakilabilir -
+    // eski/manuel olusturulmus abonelikler icin bilinmiyor olabilir.
+    @Column(name = "tariff_version")
+    private Integer tariffVersion;
+
     @Column(nullable = false)
     private String status; // ACTIVE, SUSPENDED, TERMINATED
 
@@ -72,6 +79,9 @@ public class Subscription {
 
     public String getTariffCode() { return tariffCode; }
     public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
+
+    public Integer getTariffVersion() { return tariffVersion; }
+    public void setTariffVersion(Integer tariffVersion) { this.tariffVersion = tariffVersion; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

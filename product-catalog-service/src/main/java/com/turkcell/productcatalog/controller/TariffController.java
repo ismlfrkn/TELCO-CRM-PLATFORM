@@ -4,6 +4,7 @@ import com.turkcell.productcatalog.dto.request.TariffCreateRequest;
 import com.turkcell.productcatalog.dto.request.TariffPatchRequest;
 import com.turkcell.productcatalog.dto.request.TariffUpdateRequest;
 import com.turkcell.productcatalog.dto.response.TariffResponse;
+import com.turkcell.productcatalog.dto.response.TariffVersionResponse;
 import com.turkcell.productcatalog.service.TariffService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tariffs")
@@ -30,6 +33,16 @@ public class TariffController {
     @GetMapping("/{code}")
     public TariffResponse getByCode(@PathVariable String code) {
         return tariffService.getTariffResponseByCode(code);
+    }
+
+    @GetMapping("/{code}/versions")
+    public List<TariffVersionResponse> getVersionHistory(@PathVariable String code) {
+        return tariffService.getTariffVersionHistory(code);
+    }
+
+    @GetMapping("/{code}/versions/{version}")
+    public TariffVersionResponse getVersion(@PathVariable String code, @PathVariable int version) {
+        return tariffService.getTariffVersion(code, version);
     }
 
     @PostMapping

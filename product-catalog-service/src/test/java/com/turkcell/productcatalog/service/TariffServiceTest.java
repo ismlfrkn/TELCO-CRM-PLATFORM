@@ -4,17 +4,24 @@ import com.turkcell.productcatalog.dto.request.TariffCreateRequest;
 import com.turkcell.productcatalog.dto.request.TariffPatchRequest;
 import com.turkcell.productcatalog.dto.request.TariffUpdateRequest;
 import com.turkcell.productcatalog.dto.response.TariffResponse;
+import com.turkcell.productcatalog.dto.response.TariffVersionResponse;
 import com.turkcell.productcatalog.entity.Addon;
 import com.turkcell.productcatalog.entity.Tariff;
+import com.turkcell.productcatalog.entity.TariffVersion;
 import com.turkcell.productcatalog.exception.TariffNotFoundException;
+import com.turkcell.productcatalog.exception.TariffVersionNotFoundException;
 import com.turkcell.productcatalog.mapper.TariffMapper;
+import com.turkcell.productcatalog.mapper.TariffVersionMapper;
 import com.turkcell.productcatalog.repository.TariffRepository;
+import com.turkcell.productcatalog.repository.TariffVersionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.mockito.ArgumentCaptor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +34,7 @@ import static org.mockito.Mockito.*;
 class TariffServiceTest {
 
     private TariffRepository tariffRepository;
+    private TariffVersionRepository tariffVersionRepository;
     private AddonService addonService;
     private OutboxEventService outboxEventService;
     private TariffService tariffService;
@@ -34,12 +42,16 @@ class TariffServiceTest {
     @BeforeEach
     void setUp() {
         tariffRepository = mock(TariffRepository.class);
+        tariffVersionRepository = mock(TariffVersionRepository.class);
         addonService = mock(AddonService.class);
         outboxEventService = mock(OutboxEventService.class);
         TariffMapper tariffMapper = Mappers.getMapper(TariffMapper.class);
-        tariffService = new TariffService(tariffRepository, addonService, tariffMapper, outboxEventService);
+        TariffVersionMapper tariffVersionMapper = Mappers.getMapper(TariffVersionMapper.class);
+        tariffService = new TariffService(tariffRepository, tariffVersionRepository, addonService, tariffMapper,
+                tariffVersionMapper, outboxEventService);
 
         when(tariffRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(tariffVersionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -131,10 +143,113 @@ class TariffServiceTest {
         assertThat(tariff.getAddons()).contains(addon);
     }
 
+    @Test
+    void updateTariff_archivesPreviousVersionAndIncrementsVersion() {
+        Tariff tariff = existingTariff();
+        when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
+
+        TariffUpdateRequest request = new TariffUpdateRequest();
+        request.setName("Renamed Tariff");
+        request.setType("POSTPAID");
+        request.setMonthlyFee(new BigDecimal("200.00"));
+        request.setStatus("ACTIVE");
+        request.setCurrency("TRY");
+
+        TariffResponse response = tariffService.updateTariff("TRF-001", request);
+
+        assertThat(response.getVersion()).isEqualTo(2);
+        ArgumentCaptor<TariffVersion> captor = ArgumentCaptor.forClass(TariffVersion.class);
+        verify(tariffVersionRepository).save(captor.capture());
+        TariffVersion archived = captor.getValue();
+        assertThat(archived.getVersion()).isEqualTo(1);
+        assertThat(archived.getName()).isEqualTo("Super Tariff"); // guncellemeden ONCEKI isim
+        assertThat(archived.getMonthlyFee()).isEqualByComparingTo("150.00"); // guncellemeden ONCEKI ucret
+    }
+
+    @Test
+    void patchTariff_archivesPreviousVersionAndIncrementsVersion() {
+        Tariff tariff = existingTariff();
+        when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
+
+        TariffPatchRequest request = new TariffPatchRequest();
+        request.setName("Patched Name");
+
+        TariffResponse response = tariffService.patchTariff("TRF-001", request);
+
+        assertThat(response.getVersion()).isEqualTo(2);
+        verify(tariffVersionRepository).save(any());
+    }
+
+    @Test
+    void getTariffVersion_whenRequestingCurrentVersion_returnsLiveTariffTerms() {
+        Tariff tariff = existingTariff();
+        when(tariffRepository.findByCode("TRF-001")).thenReturn(Optional.of(tariff));
+
+        TariffVersionResponse response = tariffService.getTariffVersion("TRF-001", 1);
+
+        assertThat(response.getMonthlyFee()).isEqualByComparingTo("150.00");
+        assertThat(response.getSupersededAt()).isNull();
+    }
+
+    @Test
+    void getTariffVersion_whenRequestingArchivedVersion_returnsHistoricalTerms() {
+        Tariff tariff = existingTariff();
+        tariff.setVersion(2);
+        tariff.setMonthlyFee(new BigDecimal("200.00"));
+        when(tariffRepository.findByCode("TRF-001")).thenReturn(Optional.of(tariff));
+
+        TariffVersion archived = new TariffVersion();
+        archived.setCode("TRF-001");
+        archived.setVersion(1);
+        archived.setMonthlyFee(new BigDecimal("150.00"));
+        when(tariffVersionRepository.findByCodeAndVersion("TRF-001", 1)).thenReturn(Optional.of(archived));
+
+        TariffVersionResponse response = tariffService.getTariffVersion("TRF-001", 1);
+
+        assertThat(response.getMonthlyFee()).isEqualByComparingTo("150.00");
+    }
+
+    @Test
+    void getTariffVersion_whenVersionNeverExisted_throwsTariffVersionNotFoundException() {
+        Tariff tariff = existingTariff();
+        when(tariffRepository.findByCode("TRF-001")).thenReturn(Optional.of(tariff));
+        when(tariffVersionRepository.findByCodeAndVersion("TRF-001", 99)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tariffService.getTariffVersion("TRF-001", 99))
+                .isInstanceOf(TariffVersionNotFoundException.class);
+    }
+
+    @Test
+    void getTariffVersion_whenTariffCodeUnknown_throwsTariffNotFoundException() {
+        when(tariffRepository.findByCode("GHOST")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tariffService.getTariffVersion("GHOST", 1))
+                .isInstanceOf(TariffNotFoundException.class);
+    }
+
+    @Test
+    void getTariffVersionHistory_returnsArchivedVersionsDescending() {
+        Tariff tariff = existingTariff();
+        when(tariffRepository.findByCode("TRF-001")).thenReturn(Optional.of(tariff));
+
+        TariffVersion v2 = new TariffVersion();
+        v2.setCode("TRF-001");
+        v2.setVersion(2);
+        TariffVersion v1 = new TariffVersion();
+        v1.setCode("TRF-001");
+        v1.setVersion(1);
+        when(tariffVersionRepository.findAllByCodeOrderByVersionDesc("TRF-001")).thenReturn(List.of(v2, v1));
+
+        List<TariffVersionResponse> history = tariffService.getTariffVersionHistory("TRF-001");
+
+        assertThat(history).extracting(TariffVersionResponse::getVersion).containsExactly(2, 1);
+    }
+
     private Tariff existingTariff() {
         Tariff tariff = new Tariff();
         tariff.setId(UUID.randomUUID());
         tariff.setCode("TRF-001");
+        tariff.setVersion(1);
         tariff.setName("Super Tariff");
         tariff.setType("POSTPAID");
         tariff.setMonthlyFee(new BigDecimal("150.00"));

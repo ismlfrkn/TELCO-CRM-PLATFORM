@@ -4,15 +4,22 @@ import com.turkcell.productcatalog.dto.request.TariffCreateRequest;
 import com.turkcell.productcatalog.dto.request.TariffPatchRequest;
 import com.turkcell.productcatalog.dto.request.TariffUpdateRequest;
 import com.turkcell.productcatalog.dto.response.TariffResponse;
+import com.turkcell.productcatalog.dto.response.TariffVersionResponse;
 import com.turkcell.productcatalog.entity.Addon;
 import com.turkcell.productcatalog.entity.Tariff;
+import com.turkcell.productcatalog.entity.TariffVersion;
 import com.turkcell.productcatalog.exception.TariffNotFoundException;
+import com.turkcell.productcatalog.exception.TariffVersionNotFoundException;
 import com.turkcell.productcatalog.mapper.TariffMapper;
+import com.turkcell.productcatalog.mapper.TariffVersionMapper;
 import com.turkcell.productcatalog.repository.TariffRepository;
+import com.turkcell.productcatalog.repository.TariffVersionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class TariffService {
@@ -20,15 +27,20 @@ public class TariffService {
     private static final String AGGREGATE_TYPE = "Tariff";
 
     private final TariffRepository tariffRepository;
+    private final TariffVersionRepository tariffVersionRepository;
     private final AddonService addonService;
     private final TariffMapper tariffMapper;
+    private final TariffVersionMapper tariffVersionMapper;
     private final OutboxEventService outboxEventService;
 
-    public TariffService(TariffRepository tariffRepository, AddonService addonService, TariffMapper tariffMapper,
-                          OutboxEventService outboxEventService) {
+    public TariffService(TariffRepository tariffRepository, TariffVersionRepository tariffVersionRepository,
+                          AddonService addonService, TariffMapper tariffMapper,
+                          TariffVersionMapper tariffVersionMapper, OutboxEventService outboxEventService) {
         this.tariffRepository = tariffRepository;
+        this.tariffVersionRepository = tariffVersionRepository;
         this.addonService = addonService;
         this.tariffMapper = tariffMapper;
+        this.tariffVersionMapper = tariffVersionMapper;
         this.outboxEventService = outboxEventService;
     }
 
@@ -70,7 +82,8 @@ public class TariffService {
     @Transactional
     public TariffResponse updateTariff(String code, TariffUpdateRequest request) {
         Tariff tariff = getTariffByCode(code);
-        
+        archiveCurrentVersion(tariff);
+
         tariff.setName(request.getName());
         tariff.setType(request.getType());
         tariff.setMonthlyFee(request.getMonthlyFee());
@@ -81,6 +94,7 @@ public class TariffService {
         tariff.setCurrency(request.getCurrency());
         tariff.setEffectiveFrom(request.getEffectiveFrom());
         tariff.setEffectiveTo(request.getEffectiveTo());
+        tariff.setVersion(tariff.getVersion() + 1);
 
         tariff = tariffRepository.save(tariff);
         TariffResponse response = tariffMapper.toResponse(tariff);
@@ -91,7 +105,8 @@ public class TariffService {
     @Transactional
     public TariffResponse patchTariff(String code, TariffPatchRequest request) {
         Tariff tariff = getTariffByCode(code);
-        
+        archiveCurrentVersion(tariff);
+
         if (request.getName() != null) tariff.setName(request.getName());
         if (request.getType() != null) tariff.setType(request.getType());
         if (request.getMonthlyFee() != null) tariff.setMonthlyFee(request.getMonthlyFee());
@@ -102,11 +117,73 @@ public class TariffService {
         if (request.getCurrency() != null) tariff.setCurrency(request.getCurrency());
         if (request.getEffectiveFrom() != null) tariff.setEffectiveFrom(request.getEffectiveFrom());
         if (request.getEffectiveTo() != null) tariff.setEffectiveTo(request.getEffectiveTo());
+        tariff.setVersion(tariff.getVersion() + 1);
 
         tariff = tariffRepository.save(tariff);
         TariffResponse response = tariffMapper.toResponse(tariff);
         outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), "TariffUpdated", response);
         return response;
+    }
+
+    /**
+     * FR-08: bir onceki versiyonu (henuz yeni degerler uygulanmadan once) immutable bir
+     * anlik goruntu olarak tariff_versions'a kopyalar. subscription-service gibi tuketiciler
+     * bu satirlar sayesinde "eski abonemin baglandigi versiyonun sartlari neydi" sorusunu
+     * yanitlayabilir (bkz. GET /tariffs/{code}/versions/{version}).
+     */
+    private void archiveCurrentVersion(Tariff tariff) {
+        TariffVersion snapshot = new TariffVersion();
+        snapshot.setTariffId(tariff.getId());
+        snapshot.setCode(tariff.getCode());
+        snapshot.setVersion(tariff.getVersion());
+        snapshot.setName(tariff.getName());
+        snapshot.setType(tariff.getType());
+        snapshot.setMonthlyFee(tariff.getMonthlyFee());
+        snapshot.setMinutesIncluded(tariff.getMinutesIncluded());
+        snapshot.setSmsIncluded(tariff.getSmsIncluded());
+        snapshot.setDataMbIncluded(tariff.getDataMbIncluded());
+        snapshot.setStatus(tariff.getStatus());
+        snapshot.setEffectiveFrom(tariff.getEffectiveFrom());
+        snapshot.setEffectiveTo(tariff.getEffectiveTo());
+        snapshot.setCurrency(tariff.getCurrency());
+        tariffVersionRepository.save(snapshot);
+    }
+
+    /**
+     * Belirli bir versiyonun sartlarini dondurur: istenen versiyon guncel (henuz arsivlenmemis)
+     * versiyonsa canli satirdan, degilse tariff_versions'daki immutable kayittan okunur.
+     */
+    public TariffVersionResponse getTariffVersion(String code, int version) {
+        Tariff tariff = findTariffEntityByCode(code);
+
+        if (tariff.getVersion() == version) {
+            return tariffVersionMapper.fromCurrent(tariff);
+        }
+
+        return tariffVersionRepository.findByCodeAndVersion(code, version)
+                .map(tariffVersionMapper::fromHistory)
+                .orElseThrow(() -> new TariffVersionNotFoundException(
+                        "Tariff " + code + " has no version " + version));
+    }
+
+    /**
+     * Gecmis (arsivlenmis) versiyonlarin listesi, en yeniden en eskiye. Guncel versiyon zaten
+     * GET /tariffs/{code} ile alinabildigi icin bu listeye dahil edilmez.
+     */
+    public List<TariffVersionResponse> getTariffVersionHistory(String code) {
+        findTariffEntityByCode(code);
+        return tariffVersionRepository.findAllByCodeOrderByVersionDesc(code).stream()
+                .map(tariffVersionMapper::fromHistory)
+                .toList();
+    }
+
+    /**
+     * getTariffByCode'dan farkli olarak status'u (ACTIVE/INACTIVE) filtrelemez - deaktive
+     * edilmis bir tarifenin gecmis versiyonlari da sorgulanabilir olmali.
+     */
+    private Tariff findTariffEntityByCode(String code) {
+        return tariffRepository.findByCode(code)
+                .orElseThrow(() -> new TariffNotFoundException("Tariff not found with code: " + code));
     }
 
     @Transactional

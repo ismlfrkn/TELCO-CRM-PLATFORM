@@ -22,6 +22,11 @@ public class Tariff {
     @Column(nullable = false, unique = true)
     private String code;
 
+    // FR-08: her updateTariff/patchTariff cagrisinda 1 artar; onceki durum tariff_versions'a
+    // degismez (immutable) bir kayit olarak arsivlenir (bkz. TariffService.archiveCurrentVersion).
+    @Column(nullable = false)
+    private int version;
+
     @Column(nullable = false)
     private String name;
 
@@ -94,6 +99,9 @@ public class Tariff {
         if (currency == null) {
             currency = "TRY";
         }
+        if (version == 0) {
+            version = 1;
+        }
     }
 
     public UUID getId() { return id; }
@@ -101,6 +109,9 @@ public class Tariff {
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
+
+    public int getVersion() { return version; }
+    public void setVersion(int version) { this.version = version; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

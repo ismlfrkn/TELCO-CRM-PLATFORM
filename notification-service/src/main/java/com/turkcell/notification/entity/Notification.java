@@ -16,6 +16,7 @@ public class Notification {
 
     public static final String STATUS_SENT = "SENT";
     public static final String STATUS_FAILED = "FAILED";
+    public static final String STATUS_SKIPPED = "SKIPPED"; // FR-30: kullanici bu kanaldan opt-out etmis
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

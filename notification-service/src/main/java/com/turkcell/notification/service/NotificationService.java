@@ -33,17 +33,20 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final ChannelService channelService;
     private final NotificationTemplateService notificationTemplateService;
+    private final NotificationPreferenceService notificationPreferenceService;
     private final NotificationMapper notificationMapper;
     private final OutboxEventService outboxEventService;
     private final ObjectMapper objectMapper;
 
     public NotificationService(NotificationRepository notificationRepository, ChannelService channelService,
                                 NotificationTemplateService notificationTemplateService,
+                                NotificationPreferenceService notificationPreferenceService,
                                 NotificationMapper notificationMapper, OutboxEventService outboxEventService,
                                 ObjectMapper objectMapper) {
         this.notificationRepository = notificationRepository;
         this.channelService = channelService;
         this.notificationTemplateService = notificationTemplateService;
+        this.notificationPreferenceService = notificationPreferenceService;
         this.notificationMapper = notificationMapper;
         this.outboxEventService = outboxEventService;
         this.objectMapper = objectMapper;
@@ -55,13 +58,23 @@ public class NotificationService {
         NotificationTemplate template = notificationTemplateService.getTemplate(
                 request.getTemplateCode(), channel.getId(), request.getLocale());
 
-        String renderedBody = render(template.getBodyTemplate(), request.getPayload());
-
         Notification notification = new Notification();
         notification.setUserId(request.getUserId());
         notification.setTemplateCode(request.getTemplateCode());
         notification.setChannelId(channel.getId());
         notification.setPayloadJson(toJson(request.getPayload()));
+
+        // FR-30: kullanici bu kanaldan opt-out ettiyse gonderim yapilmaz, ama denemenin kendisi
+        // (KVKK/denetim izi icin) SKIPPED durumuyla kaydedilir.
+        if (!notificationPreferenceService.isOptedIn(request.getUserId(), channel.getId())) {
+            notification.setStatus(Notification.STATUS_SKIPPED);
+            notification = notificationRepository.save(notification);
+            log.info("Notification skipped for user {} on channel {} (opted out): template={}",
+                    request.getUserId(), channel.getCode(), request.getTemplateCode());
+            return notificationMapper.toResponse(notification);
+        }
+
+        String renderedBody = render(template.getBodyTemplate(), request.getPayload());
         notification.setStatus(Notification.STATUS_SENT);
         notification.setSentAt(Instant.now());
         notification = notificationRepository.save(notification);
