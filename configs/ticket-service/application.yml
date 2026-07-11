@@ -6,8 +6,8 @@ spring:
     name: ticket-service
   datasource:
     url: jdbc:postgresql://localhost:5433/ticket_db
-    username: telco_admin
-    password: telco_password
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

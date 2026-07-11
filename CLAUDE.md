@@ -321,6 +321,20 @@ Bu bağlamı kullanan bir AI, aşağıdaki prensiplere bağlı kalmalı:
 
 Yukarıdaki bölümler (1-14) **hedef mimariyi** tanımlar. Bu bölüm ve bir sonraki bölüm, reponun **şu an gerçekte nasıl çalıştığını** anlatır — ikisi her zaman birebir örtüşmez, aşağıdaki Bölüm 16'daki sapmalara dikkat et.
 
+**Ortam değişkenleri (.env):**
+`configs/` altındaki tüm sırlar (DB kullanıcı/parola, `gateway.internal-secret`, `jwt.secret`, `pii.encryption-key`) artık düz metin değil, `${VAR}` placeholder'ı olarak tutuluyor — gerçek değerler repo kökündeki `.env` dosyasından (gitignore'da, commit edilmez) okunur. İlk kurulumda:
+```bash
+cp .env.example .env   # PowerShell: Copy-Item .env.example .env
+```
+`docker compose` bu dosyayı otomatik okur, ekstra adım gerekmez. Ama bir servisi `mvn spring-boot:run` ile **doğrudan host üzerinde** çalıştırmadan önce `.env`'i o terminal oturumuna yüklemen gerekir — yoksa config-server'ın ilettiği placeholder çözülemez ve servis "Could not resolve placeholder" hatasıyla başlamaz:
+```powershell
+. .\scripts\load-env.ps1
+```
+```bash
+source scripts/load-env.sh
+```
+Bu yükleme her yeni terminal/servis için ayrı ayrı gerekir (env değişkenleri sadece o oturuma özeldir).
+
 **Build:**
 ```bash
 mvn clean install          # tüm modülleri derle + test et (root'tan)
@@ -348,7 +362,7 @@ pgAdmin (`localhost:5050`) container'dan bağlanırken host olarak `postgres` (c
 1. `discovery-server` (`:8761`) — Eureka, diğer her şey buna register olur.
 2. `config-server` (`:8888`) — `configs/` klasörünü GitHub'dan okur; diğer servisler config'lerini buradan çeker.
 3. `api-gateway` (`:8080`) — JWT doğrulama + routing.
-4. Herhangi bir domain servisi, örn: `mvn -pl customer-service -am spring-boot:run`.
+4. Herhangi bir domain servisi, örn: `mvn -pl customer-service -am spring-boot:run` (önce o terminalde `.env` yüklenmiş olmalı, yukarıya bak).
 
 Her `spring-boot:run` komutu terminali bloke eder — her servis ayrı bir terminalde çalıştırılmalı.
 
