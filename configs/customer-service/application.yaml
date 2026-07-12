@@ -20,6 +20,20 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        customerEvents-out-0:
+          destination: telco.customer.events
+          content-type: application/json
+
+outbox:
+  publisher:
+    poll-interval-ms: 5000
+    batch-size: 20
 
 # TCKN/VKN alan bazli AES-256-GCM sifreleme anahtari (Base64, 32 byte).
 # Deger burada tutulmaz; PII_ENCRYPTION_KEY ortam degiskeninden (K8s Secret'ta) okunur

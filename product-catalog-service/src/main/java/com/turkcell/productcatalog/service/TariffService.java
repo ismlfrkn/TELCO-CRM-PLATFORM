@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -71,6 +72,9 @@ public class TariffService {
         tariff.setMinutesIncluded(request.getMinutesIncluded());
         tariff.setSmsIncluded(request.getSmsIncluded());
         tariff.setDataMbIncluded(request.getDataMbIncluded());
+        tariff.setOverageRatePerMinute(request.getOverageRatePerMinute());
+        tariff.setOverageRateSms(request.getOverageRateSms());
+        tariff.setOverageRatePerMb(request.getOverageRatePerMb());
         tariff.setStatus(request.getStatus());
         tariff.setCurrency(request.getCurrency());
         tariff.setEffectiveFrom(request.getEffectiveFrom());
@@ -87,6 +91,7 @@ public class TariffService {
     public TariffResponse updateTariff(String code, TariffUpdateRequest request) {
         Tariff tariff = getTariffByCode(code);
         archiveCurrentVersion(tariff);
+        BigDecimal oldMonthlyFee = tariff.getMonthlyFee();
 
         tariff.setName(request.getName());
         tariff.setType(request.getType());
@@ -94,6 +99,9 @@ public class TariffService {
         tariff.setMinutesIncluded(request.getMinutesIncluded());
         tariff.setSmsIncluded(request.getSmsIncluded());
         tariff.setDataMbIncluded(request.getDataMbIncluded());
+        tariff.setOverageRatePerMinute(request.getOverageRatePerMinute());
+        tariff.setOverageRateSms(request.getOverageRateSms());
+        tariff.setOverageRatePerMb(request.getOverageRatePerMb());
         tariff.setStatus(request.getStatus());
         tariff.setCurrency(request.getCurrency());
         tariff.setEffectiveFrom(request.getEffectiveFrom());
@@ -102,7 +110,7 @@ public class TariffService {
 
         tariff = tariffRepository.save(tariff);
         TariffResponse response = tariffMapper.toResponse(tariff);
-        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), "TariffUpdated", response);
+        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), updateEventTypeFor(oldMonthlyFee, tariff.getMonthlyFee()), response);
         return response;
     }
 
@@ -111,6 +119,7 @@ public class TariffService {
     public TariffResponse patchTariff(String code, TariffPatchRequest request) {
         Tariff tariff = getTariffByCode(code);
         archiveCurrentVersion(tariff);
+        BigDecimal oldMonthlyFee = tariff.getMonthlyFee();
 
         if (request.getName() != null) tariff.setName(request.getName());
         if (request.getType() != null) tariff.setType(request.getType());
@@ -118,6 +127,9 @@ public class TariffService {
         if (request.getMinutesIncluded() != null) tariff.setMinutesIncluded(request.getMinutesIncluded());
         if (request.getSmsIncluded() != null) tariff.setSmsIncluded(request.getSmsIncluded());
         if (request.getDataMbIncluded() != null) tariff.setDataMbIncluded(request.getDataMbIncluded());
+        if (request.getOverageRatePerMinute() != null) tariff.setOverageRatePerMinute(request.getOverageRatePerMinute());
+        if (request.getOverageRateSms() != null) tariff.setOverageRateSms(request.getOverageRateSms());
+        if (request.getOverageRatePerMb() != null) tariff.setOverageRatePerMb(request.getOverageRatePerMb());
         if (request.getStatus() != null) tariff.setStatus(request.getStatus());
         if (request.getCurrency() != null) tariff.setCurrency(request.getCurrency());
         if (request.getEffectiveFrom() != null) tariff.setEffectiveFrom(request.getEffectiveFrom());
@@ -126,7 +138,7 @@ public class TariffService {
 
         tariff = tariffRepository.save(tariff);
         TariffResponse response = tariffMapper.toResponse(tariff);
-        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), "TariffUpdated", response);
+        outboxEventService.publish(AGGREGATE_TYPE, tariff.getId(), updateEventTypeFor(oldMonthlyFee, tariff.getMonthlyFee()), response);
         return response;
     }
 
@@ -189,6 +201,20 @@ public class TariffService {
     private Tariff findTariffEntityByCode(String code) {
         return tariffRepository.findByCode(code)
                 .orElseThrow(() -> new TariffNotFoundException("Tariff not found with code: " + code));
+    }
+
+    /**
+     * monthlyFee gercekten degistiyse (fiyat degisikligi diger alan degisikliklerinden ayri bir
+     * semantige sahip - tuketen servisler icin onemli olabilir) TariffPriceChanged, aksi halde
+     * (fiyat ayni kalip sadece isim/aciklama/kota gibi alanlar degistiyse) mevcut TariffUpdated
+     * yayinlanir. Ayni cagrida hem fiyat hem baska alanlar birden degisirse de TariffPriceChanged
+     * yayinlanir - fiyat degisikligi tuketiciler icin daha kritik/spesifik bir sinyal sayilir.
+     */
+    private String updateEventTypeFor(BigDecimal oldMonthlyFee, BigDecimal newMonthlyFee) {
+        boolean priceChanged = oldMonthlyFee == null
+                ? newMonthlyFee != null
+                : oldMonthlyFee.compareTo(newMonthlyFee) != 0;
+        return priceChanged ? "TariffPriceChanged" : "TariffUpdated";
     }
 
     @Transactional

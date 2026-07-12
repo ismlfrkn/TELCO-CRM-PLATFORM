@@ -49,6 +49,17 @@ public class Payment {
     @Column(name = "idempotency_key", nullable = false, unique = true)
     private String idempotencyKey;
 
+    // Asagidaki 3 alan Payment'in kendi domain'i degil - OrderCreated event'inden tasinan saga
+    // korelasyon verisi (subscription-service'in senkron geri sorgu yapmadan abonelik acabilmesi icin).
+    @Column(name = "order_id")
+    private UUID orderId; // order-service'e ait, cross-service referans (FK degil)
+
+    @Column(name = "customer_id")
+    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+
+    @Column(name = "tariff_code")
+    private String tariffCode; // product-catalog-service'e ait, cross-service referans (FK degil)
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -94,6 +105,15 @@ public class Payment {
 
     public String getIdempotencyKey() { return idempotencyKey; }
     public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
+
+    public UUID getOrderId() { return orderId; }
+    public void setOrderId(UUID orderId) { this.orderId = orderId; }
+
+    public UUID getCustomerId() { return customerId; }
+    public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+
+    public String getTariffCode() { return tariffCode; }
+    public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

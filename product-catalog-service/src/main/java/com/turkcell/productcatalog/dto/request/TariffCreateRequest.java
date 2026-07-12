@@ -32,6 +32,15 @@ public class TariffCreateRequest {
     @Min(value = 0, message = "Data MB cannot be negative")
     private int dataMbIncluded;
 
+    @Min(value = 0, message = "Overage rate per minute cannot be negative")
+    private BigDecimal overageRatePerMinute = BigDecimal.ZERO;
+
+    @Min(value = 0, message = "Overage rate per sms cannot be negative")
+    private BigDecimal overageRateSms = BigDecimal.ZERO;
+
+    @Min(value = 0, message = "Overage rate per mb cannot be negative")
+    private BigDecimal overageRatePerMb = BigDecimal.ZERO;
+
     @NotBlank(message = "Status cannot be blank")
     private String status;
 
@@ -62,6 +71,15 @@ public class TariffCreateRequest {
 
     public int getDataMbIncluded() { return dataMbIncluded; }
     public void setDataMbIncluded(int dataMbIncluded) { this.dataMbIncluded = dataMbIncluded; }
+
+    public BigDecimal getOverageRatePerMinute() { return overageRatePerMinute; }
+    public void setOverageRatePerMinute(BigDecimal overageRatePerMinute) { this.overageRatePerMinute = overageRatePerMinute; }
+
+    public BigDecimal getOverageRateSms() { return overageRateSms; }
+    public void setOverageRateSms(BigDecimal overageRateSms) { this.overageRateSms = overageRateSms; }
+
+    public BigDecimal getOverageRatePerMb() { return overageRatePerMb; }
+    public void setOverageRatePerMb(BigDecimal overageRatePerMb) { this.overageRatePerMb = overageRatePerMb; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

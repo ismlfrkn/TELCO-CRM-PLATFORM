@@ -20,6 +20,56 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  cloud:
+    function:
+      # Ayni anda birden fazla Consumer<T> bean'ini bagimsiz olarak baglamak icin ";" ile ayrilir
+      # ("|" fonksiyon zincirlemek icin kullanilir, burada istedigimiz o degil).
+      definition: customerEvents;ticketEvents;catalogEvents;subscriptionEvents;billingEvents;orderEvents;paymentEvents;usageEvents
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        customerEvents-in-0:
+          destination: telco.customer.events
+          group: notification-service
+          content-type: application/json
+        ticketEvents-in-0:
+          destination: telco.ticket.events
+          group: notification-service
+          content-type: application/json
+        catalogEvents-in-0:
+          destination: telco.catalog.events
+          group: notification-service
+          content-type: application/json
+        subscriptionEvents-in-0:
+          destination: telco.subscription.events
+          group: notification-service
+          content-type: application/json
+        billingEvents-in-0:
+          destination: telco.billing.events
+          group: notification-service
+          content-type: application/json
+        orderEvents-in-0:
+          destination: telco.order.events
+          group: notification-service
+          content-type: application/json
+        paymentEvents-in-0:
+          destination: telco.payment.events
+          group: notification-service
+          content-type: application/json
+        usageEvents-in-0:
+          destination: telco.usage.events
+          group: notification-service
+          content-type: application/json
+        notificationEvents-out-0:
+          destination: telco.notification.events
+          content-type: application/json
+
+outbox:
+  publisher:
+    poll-interval-ms: 5000
+    batch-size: 20
 
 eureka:
   client:

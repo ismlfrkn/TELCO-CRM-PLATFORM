@@ -103,7 +103,22 @@ public class QuotaService {
 
         quotaRepository.save(quota);
         String thresholdEvent = detectThresholdEvent(included, remainingBefore, remainingAfter);
-        return new QuotaDeductionResult(quotaMapper.toResponse(quota), thresholdEvent);
+        BigDecimal overageQuantity = computeOverageQuantity(amount, remainingBefore, remainingAfter);
+        return new QuotaDeductionResult(quotaMapper.toResponse(quota), thresholdEvent, overageQuantity);
+    }
+
+    /**
+     * FR-20: asim kullanimlari billing'e agregate edilir. Bu CDR dususu kotayi negatife
+     * dusurduyse (ya da zaten negatifken devam ettiyse), dususun asima denk gelen kismini
+     * dondurur - null donerse bu CDR tamamen kota icinde kalmis demektir, UsageAggregated
+     * yayinlanmaz.
+     */
+    private BigDecimal computeOverageQuantity(int amount, int remainingBefore, int remainingAfter) {
+        if (remainingAfter >= 0) {
+            return null;
+        }
+        int overage = remainingBefore > 0 ? -remainingAfter : amount;
+        return overage > 0 ? BigDecimal.valueOf(overage) : null;
     }
 
     /**
@@ -124,6 +139,6 @@ public class QuotaService {
         return null;
     }
 
-    public record QuotaDeductionResult(QuotaResponse quota, String thresholdEvent) {
+    public record QuotaDeductionResult(QuotaResponse quota, String thresholdEvent, BigDecimal overageQuantity) {
     }
 }

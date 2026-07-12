@@ -11,6 +11,9 @@ public class TariffPatchRequest {
     private Integer minutesIncluded;
     private Integer smsIncluded;
     private Integer dataMbIncluded;
+    private BigDecimal overageRatePerMinute;
+    private BigDecimal overageRateSms;
+    private BigDecimal overageRatePerMb;
     private String status;
     private String currency;
     private LocalDate effectiveFrom;
@@ -34,6 +37,15 @@ public class TariffPatchRequest {
 
     public Integer getDataMbIncluded() { return dataMbIncluded; }
     public void setDataMbIncluded(Integer dataMbIncluded) { this.dataMbIncluded = dataMbIncluded; }
+
+    public BigDecimal getOverageRatePerMinute() { return overageRatePerMinute; }
+    public void setOverageRatePerMinute(BigDecimal overageRatePerMinute) { this.overageRatePerMinute = overageRatePerMinute; }
+
+    public BigDecimal getOverageRateSms() { return overageRateSms; }
+    public void setOverageRateSms(BigDecimal overageRateSms) { this.overageRateSms = overageRateSms; }
+
+    public BigDecimal getOverageRatePerMb() { return overageRatePerMb; }
+    public void setOverageRatePerMb(BigDecimal overageRatePerMb) { this.overageRatePerMb = overageRatePerMb; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

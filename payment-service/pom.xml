@@ -85,10 +85,22 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Spring Cloud Stream (Kafka binder) - OrderCreated/SubscriptionActivationFailed tuketimi ve
+             PaymentCompleted/PaymentFailed yayini fonksiyonel Consumer<T>/StreamBridge ile yapilir. -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        </dependency>
+
         <!-- Testcontainers (idempotency + concurrency dogrulamasi icin) -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

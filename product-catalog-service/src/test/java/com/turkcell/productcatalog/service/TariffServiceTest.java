@@ -76,6 +76,43 @@ class TariffServiceTest {
     }
 
     @Test
+    void createTariff_withoutOverageRates_defaultsToZero() {
+        TariffCreateRequest request = new TariffCreateRequest();
+        request.setCode("TRF-002");
+        request.setName("No Overage Tariff");
+        request.setType("POSTPAID");
+        request.setMonthlyFee(new BigDecimal("100.00"));
+        request.setStatus("ACTIVE");
+        request.setCurrency("TRY");
+
+        TariffResponse response = tariffService.createTariff(request);
+
+        assertThat(response.getOverageRatePerMinute()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getOverageRateSms()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getOverageRatePerMb()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void createTariff_withOverageRates_persistsThem() {
+        TariffCreateRequest request = new TariffCreateRequest();
+        request.setCode("TRF-003");
+        request.setName("Overage Priced Tariff");
+        request.setType("POSTPAID");
+        request.setMonthlyFee(new BigDecimal("100.00"));
+        request.setStatus("ACTIVE");
+        request.setCurrency("TRY");
+        request.setOverageRatePerMinute(new BigDecimal("0.50"));
+        request.setOverageRateSms(new BigDecimal("0.10"));
+        request.setOverageRatePerMb(new BigDecimal("0.05"));
+
+        TariffResponse response = tariffService.createTariff(request);
+
+        assertThat(response.getOverageRatePerMinute()).isEqualByComparingTo("0.50");
+        assertThat(response.getOverageRateSms()).isEqualByComparingTo("0.10");
+        assertThat(response.getOverageRatePerMb()).isEqualByComparingTo("0.05");
+    }
+
+    @Test
     void getTariffByCode_whenMissingOrInactive_throwsTariffNotFoundException() {
         when(tariffRepository.findByCodeAndStatusNot("GHOST", "INACTIVE")).thenReturn(Optional.empty());
 
@@ -84,8 +121,8 @@ class TariffServiceTest {
     }
 
     @Test
-    void updateTariff_replacesEditableFields() {
-        Tariff tariff = existingTariff();
+    void updateTariff_whenMonthlyFeeChanges_publishesTariffPriceChanged() {
+        Tariff tariff = existingTariff(); // monthlyFee = 150.00
         when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
 
         TariffUpdateRequest request = new TariffUpdateRequest();
@@ -99,7 +136,40 @@ class TariffServiceTest {
 
         assertThat(response.getName()).isEqualTo("Renamed Tariff");
         assertThat(response.getMonthlyFee()).isEqualByComparingTo("200.00");
+        verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffPriceChanged"), any());
+        verify(outboxEventService, never()).publish(eq("Tariff"), any(), eq("TariffUpdated"), any());
+    }
+
+    @Test
+    void updateTariff_whenMonthlyFeeUnchanged_publishesTariffUpdated() {
+        Tariff tariff = existingTariff(); // monthlyFee = 150.00
+        when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
+
+        TariffUpdateRequest request = new TariffUpdateRequest();
+        request.setName("Renamed Tariff");
+        request.setType("POSTPAID");
+        request.setMonthlyFee(new BigDecimal("150.00")); // ayni fiyat
+        request.setStatus("ACTIVE");
+        request.setCurrency("TRY");
+
+        tariffService.updateTariff("TRF-001", request);
+
         verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffUpdated"), any());
+        verify(outboxEventService, never()).publish(eq("Tariff"), any(), eq("TariffPriceChanged"), any());
+    }
+
+    @Test
+    void patchTariff_whenMonthlyFeeChanges_publishesTariffPriceChanged() {
+        Tariff tariff = existingTariff(); // monthlyFee = 150.00
+        when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
+
+        TariffPatchRequest request = new TariffPatchRequest();
+        request.setMonthlyFee(new BigDecimal("175.00"));
+
+        tariffService.patchTariff("TRF-001", request);
+
+        verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffPriceChanged"), any());
+        verify(outboxEventService, never()).publish(eq("Tariff"), any(), eq("TariffUpdated"), any());
     }
 
     @Test
@@ -115,6 +185,22 @@ class TariffServiceTest {
         assertThat(response.getName()).isEqualTo("Patched Name");
         assertThat(response.getMonthlyFee()).isEqualByComparingTo("150.00"); // degismedi
         verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffUpdated"), any());
+    }
+
+    @Test
+    void patchTariff_withOverageRatePerMinute_onlyUpdatesThatRate() {
+        Tariff tariff = existingTariff();
+        when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
+
+        TariffPatchRequest request = new TariffPatchRequest();
+        request.setOverageRatePerMinute(new BigDecimal("0.50"));
+
+        TariffResponse response = tariffService.patchTariff("TRF-001", request);
+
+        assertThat(response.getOverageRatePerMinute()).isEqualByComparingTo("0.50");
+        assertThat(response.getOverageRateSms()).isEqualByComparingTo(BigDecimal.ZERO); // degismedi
+        assertThat(response.getOverageRatePerMb()).isEqualByComparingTo(BigDecimal.ZERO); // degismedi
+        assertThat(response.getName()).isEqualTo("Super Tariff"); // degismedi
     }
 
     @Test

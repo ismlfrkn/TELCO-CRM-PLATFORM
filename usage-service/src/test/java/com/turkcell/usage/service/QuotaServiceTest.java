@@ -143,6 +143,7 @@ class QuotaServiceTest {
 
         assertThat(result.quota().getMinutesRemaining()).isEqualTo(15);
         assertThat(result.thresholdEvent()).isEqualTo("QuotaThresholdReached");
+        assertThat(result.overageQuantity()).isNull();
     }
 
     @Test
@@ -157,6 +158,8 @@ class QuotaServiceTest {
 
         assertThat(result.quota().getMinutesRemaining()).isEqualTo(-5);
         assertThat(result.thresholdEvent()).isEqualTo("QuotaExceeded");
+        // 20 dakikalik CDR'in sadece esigi asan 5 dakikalik kismi asim sayilir (billing'e agregasyon icin).
+        assertThat(result.overageQuantity()).isEqualByComparingTo(BigDecimal.valueOf(5));
     }
 
     @Test
@@ -185,6 +188,8 @@ class QuotaServiceTest {
 
         assertThat(result.quota().getMinutesRemaining()).isEqualTo(-8);
         assertThat(result.thresholdEvent()).isNull();
+        // Zaten asimdaki bir abone icin sonraki her CDR'in tamami asim sayilir (esigi tekrar gecmeye gerek yok).
+        assertThat(result.overageQuantity()).isEqualByComparingTo(BigDecimal.valueOf(3));
     }
 
     private Quota quotaWith(int minutesIncluded, int smsIncluded, int mbIncluded) {

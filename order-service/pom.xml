@@ -78,16 +78,17 @@
             <artifactId>spring-cloud-starter-config</artifactId>
         </dependency>
 
-        <!-- Spring Cloud OpenFeign: Customer/Product-Catalog/Subscription/Payment servislerine
-             senkron REST cagrilari icin (dokuman bolum 9.1 - "Order olustururken Customer kontrolu:
-             Senkron REST", "katalog urun fiyati: Senkron REST + cache") -->
+        <!-- Spring Cloud OpenFeign: Customer/Product-Catalog servislerine senkron REST cagrilari icin
+             (dokuman bolum 9.1 - "Order olustururken Customer kontrolu: Senkron REST", "katalog urun
+             fiyati: Senkron REST + cache"). Order->Payment ve Order->Subscription artik Kafka
+             uzerinden asenkron (bkz. SagaEventConsumerConfig), bu ikisi icin Feign client kalmadi. -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
-        <!-- Resilience4j: senkron saga'nin en kirilgan noktasi olan Feign zincirine
-             circuit breaker + retry (Bolum 10) -->
+        <!-- Resilience4j: musteri/katalog dogrulamasi icin hala senkron kalan Feign cagrilarina
+             circuit breaker + retry (Bolum 10) - bkz. client/gateway/*Gateway siniflari. -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
@@ -110,6 +111,14 @@
             <version>3.1.8</version>
         </dependency>
 
+        <!-- Spring Cloud Stream (Kafka binder) - OrderCreated yayini ve
+             PaymentCompleted/PaymentFailed/SubscriptionActivated/SubscriptionActivationFailed tuketimi
+             fonksiyonel Consumer<T>/StreamBridge ile yapilir. -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        </dependency>
+
         <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>
@@ -121,6 +130,11 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -14,6 +14,7 @@ public class SubscriptionResponse {
     private Instant activatedAt;
     private Instant terminatedAt;
     private Instant createdAt;
+    private UUID orderId;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -41,4 +42,7 @@ public class SubscriptionResponse {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public UUID getOrderId() { return orderId; }
+    public void setOrderId(UUID orderId) { this.orderId = orderId; }
 }

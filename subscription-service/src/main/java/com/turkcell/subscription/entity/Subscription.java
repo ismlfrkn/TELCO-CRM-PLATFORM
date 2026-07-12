@@ -47,6 +47,12 @@ public class Subscription {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // order-service'e ait, cross-service referans (FK degil). PaymentCompleted event'i uzerinden
+    // tetiklenen aktivasyonlarda dolu, dogrudan REST ile acilan (siparissiz) aboneliklerde bos kalir.
+    // UNIQUE kisit ayni siparis icin ikinci kez abonelik acilmasini engeller (idempotency).
+    @Column(name = "order_id", unique = true)
+    private UUID orderId;
+
     public Subscription() {
     }
 
@@ -94,4 +100,7 @@ public class Subscription {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public UUID getOrderId() { return orderId; }
+    public void setOrderId(UUID orderId) { this.orderId = orderId; }
 }

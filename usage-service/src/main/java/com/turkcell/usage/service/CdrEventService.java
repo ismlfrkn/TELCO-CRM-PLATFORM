@@ -18,14 +18,16 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * FR-17: CDR akisi Kafka uzerinden tuketilir - Kafka consumer henuz yok (diger servislerdeki ayni
- * bilincli kapsam disi birakma), bu yuzden bu endpoint CDR simulator/mediation'in dogrudan cagirdigi
- * senkron bir "consume" noktasi olarak calisir. Gercek dunyada CDR teslimati en-az-bir-kez (at-least-once)
- * oldugu icin ayni externalCdrId birden fazla gelebilir - payment-service'teki Idempotency-Key ile
- * ayni sinif problem, ayni cozum kullanilir (bkz. asagidaki REQUIRES_NEW transaction gerekcesi).
+ * FR-17: CDR akisi iki giris noktasindan da tuketilebilir - REST (CdrEventController, simulator'in
+ * dogrudan cagirabilecegi senkron yol) ve Kafka (CdrEventConsumerConfig, telco.cdr.events'ten
+ * CdrRecorded event'i). Ikisi de ayni ingest(...) metodunu paylasir. Gercek dunyada CDR teslimati
+ * en-az-bir-kez (at-least-once) oldugu icin ayni externalCdrId birden fazla gelebilir -
+ * payment-service'teki Idempotency-Key ile ayni sinif problem, ayni cozum kullanilir (bkz. asagidaki
+ * REQUIRES_NEW transaction gerekcesi).
  */
 @Service
 public class CdrEventService {
@@ -110,6 +112,12 @@ public class CdrEventService {
             if (deduction.thresholdEvent() != null) {
                 outboxEventService.publish(AGGREGATE_QUOTA, deduction.quota().getId(), deduction.thresholdEvent(), deduction.quota());
             }
+            if (deduction.overageQuantity() != null) {
+                outboxEventService.publish(AGGREGATE_QUOTA, deduction.quota().getId(), "UsageAggregated",
+                        new UsageAggregatedPayload(deduction.quota().getSubscriptionId(), deduction.quota().getId(),
+                                request.getCdrType(), deduction.overageQuantity(),
+                                deduction.quota().getPeriodStart(), deduction.quota().getPeriodEnd()));
+            }
             auditLogService.record("CDR_PROCESSED", AGGREGATE_CDR_EVENT, cdrEvent.getId(), null, usageRecordMapper.toResponse(usageRecord));
         } catch (QuotaNotFoundException | UnsupportedCdrTypeException ex) {
             cdrEvent.setStatus(CdrEvent.STATUS_FAILED);
@@ -134,5 +142,9 @@ public class CdrEventService {
             }
             default -> throw new UnsupportedCdrTypeException("Unsupported cdr type: " + cdrType);
         };
+    }
+
+    public record UsageAggregatedPayload(UUID subscriptionId, UUID quotaId, String cdrType,
+                                          BigDecimal overageQuantity, LocalDate periodStart, LocalDate periodEnd) {
     }
 }

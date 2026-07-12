@@ -20,6 +20,20 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        ticketEvents-out-0:
+          destination: telco.ticket.events
+          content-type: application/json
+
+outbox:
+  publisher:
+    poll-interval-ms: 5000
+    batch-size: 20
 
 eureka:
   client:

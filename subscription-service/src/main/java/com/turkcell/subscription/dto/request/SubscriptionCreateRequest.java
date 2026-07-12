@@ -20,6 +20,10 @@ public class SubscriptionCreateRequest {
     // Bos birakilirsa havuzdan otomatik musait bir numara tahsis edilir.
     private String msisdn;
 
+    // Sadece PaymentCompleted event'i uzerinden tetiklenen aktivasyonlarda dolu - idempotency
+    // anahtari olarak kullanilir (bkz. Subscription.orderId).
+    private UUID orderId;
+
     public UUID getCustomerId() { return customerId; }
     public void setCustomerId(UUID customerId) { this.customerId = customerId; }
 
@@ -31,4 +35,7 @@ public class SubscriptionCreateRequest {
 
     public String getMsisdn() { return msisdn; }
     public void setMsisdn(String msisdn) { this.msisdn = msisdn; }
+
+    public UUID getOrderId() { return orderId; }
+    public void setOrderId(UUID orderId) { this.orderId = orderId; }
 }

@@ -16,6 +16,9 @@ public class PaymentResponse {
     private Instant paidAt;
     private String status;
     private Instant createdAt;
+    private UUID orderId;
+    private UUID customerId;
+    private String tariffCode;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -46,4 +49,13 @@ public class PaymentResponse {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public UUID getOrderId() { return orderId; }
+    public void setOrderId(UUID orderId) { this.orderId = orderId; }
+
+    public UUID getCustomerId() { return customerId; }
+    public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+
+    public String getTariffCode() { return tariffCode; }
+    public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
 }

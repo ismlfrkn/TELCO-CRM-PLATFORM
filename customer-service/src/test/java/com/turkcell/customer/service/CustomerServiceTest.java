@@ -56,7 +56,7 @@ class CustomerServiceTest {
 
         assertThat(response.getStatus()).isEqualTo("PENDING");
         assertThat(response.getIdentityNumber()).isEqualTo(VALID_TCKN);
-        verify(outboxEventService).publish(eq("Customer"), any(), eq("CustomerCreated"), any());
+        verify(outboxEventService).publish(eq("Customer"), any(), eq("CustomerRegistered"), any());
         verify(auditLogService).record(eq("CUSTOMER_CREATED"), eq("Customer"), any(), eq(null), any());
     }
 

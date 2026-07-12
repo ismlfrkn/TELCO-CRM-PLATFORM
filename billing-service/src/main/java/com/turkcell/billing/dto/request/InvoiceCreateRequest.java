@@ -28,6 +28,12 @@ public class InvoiceCreateRequest {
     // Bos birakilirsa Invoice.prePersist varsayilan olarak "TRY" atar (Wallet/Payment ile ayni pattern).
     private String currency;
 
+    // Opsiyonel: doluysa, bu abonelik+donem icin henuz faturalanmamis (usage_aggregates'te invoice_id
+    // NULL olan) asim kayitlari bu tarifenin guncel oranlariyla (product-catalog-service'ten senkron
+    // cekilir) fiyatlandirilip ek InvoiceLine olarak eklenir. Bos birakilirsa asim hesaplamasi atlanir
+    // - mevcut (asim-siz) davranis degismez.
+    private String tariffCode;
+
     @NotEmpty(message = "At least one invoice line is required")
     @Valid
     private List<InvoiceLineRequest> lines;
@@ -49,6 +55,9 @@ public class InvoiceCreateRequest {
 
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
+
+    public String getTariffCode() { return tariffCode; }
+    public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
 
     public List<InvoiceLineRequest> getLines() { return lines; }
     public void setLines(List<InvoiceLineRequest> lines) { this.lines = lines; }

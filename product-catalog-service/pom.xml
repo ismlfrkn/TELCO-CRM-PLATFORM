@@ -96,6 +96,29 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Spring Cloud Stream (Kafka binder) - outbox->Kafka publisher StreamBridge ile yazilir -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        </dependency>
+
+        <!-- Testcontainers: outbox publisher'in gercek bir Kafka broker'a karsi dogrulanmasi icin -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

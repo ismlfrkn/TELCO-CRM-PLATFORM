@@ -1,10 +1,7 @@
 package com.turkcell.order.service;
 
-import com.turkcell.order.client.*;
 import com.turkcell.order.client.gateway.CustomerServiceGateway;
-import com.turkcell.order.client.gateway.PaymentServiceGateway;
 import com.turkcell.order.client.gateway.ProductCatalogServiceGateway;
-import com.turkcell.order.client.gateway.SubscriptionServiceGateway;
 import com.turkcell.order.dto.request.OrderCreateRequest;
 import com.turkcell.order.dto.request.OrderItemRequest;
 import com.turkcell.order.dto.response.OrderItemResponse;
@@ -19,8 +16,6 @@ import com.turkcell.order.mapper.OrderMapper;
 import com.turkcell.order.repository.OrderItemRepository;
 import com.turkcell.order.repository.OrderRepository;
 import feign.FeignException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -31,18 +26,17 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Dokuman bolum 9.2'deki saga akisinin uygulamasi. Gercek uretimde 4. ve 5. adimlar (Order -> Payment,
- * Order -> Subscription) Kafka uzerinden ASENKRON calisir (bkz. 9.1 karar tablosu); bu platformda henuz
- * bir Kafka consumer altyapisi kurulmadigi icin (diger tum servislerle ayni bilincli kapsam disi
- * birakma), bu saga SENKRON REST cagrilariyla (OpenFeign) tek bir istek-cevap dongusunde yurutulur.
- * Musteri/urun dogrulama adimlari zaten dokumanin kendisinde de "Senkron" olarak tanimli (9.1).
+ * CLAUDE.md Bolum 8.2'deki choreography'e gore: bu servis artik siparisi olusturup OrderCreated
+ * yayinlamaktan sorumludur, odeme/abonelik adimlarini SENKRON olarak beklemez. Saga'nin devami
+ * (PaymentCompleted/PaymentFailed, SubscriptionActivated/SubscriptionActivationFailed)
+ * SagaEventConsumerConfig icindeki fonksiyonel Consumer<T> bean'leri tarafindan asenkron olarak
+ * yurutulur. Musteri/urun dogrulama adimlari dokumanin 9.1 bolumune gore hala SENKRON REST (bunlara
+ * dokunulmadi).
  */
 @Service
 public class OrderService {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private static final String AGGREGATE_TYPE = "Order";
-    private static final String PAYMENT_METHOD = "CARD";
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -52,16 +46,12 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final CustomerServiceGateway customerServiceGateway;
     private final ProductCatalogServiceGateway productCatalogServiceGateway;
-    private final PaymentServiceGateway paymentServiceGateway;
-    private final SubscriptionServiceGateway subscriptionServiceGateway;
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
                          OrderPersistenceService orderPersistenceService, IdempotencyKeyService idempotencyKeyService,
                          OutboxEventService outboxEventService, OrderMapper orderMapper,
                          CustomerServiceGateway customerServiceGateway,
-                         ProductCatalogServiceGateway productCatalogServiceGateway,
-                         PaymentServiceGateway paymentServiceGateway,
-                         SubscriptionServiceGateway subscriptionServiceGateway) {
+                         ProductCatalogServiceGateway productCatalogServiceGateway) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderPersistenceService = orderPersistenceService;
@@ -70,8 +60,6 @@ public class OrderService {
         this.orderMapper = orderMapper;
         this.customerServiceGateway = customerServiceGateway;
         this.productCatalogServiceGateway = productCatalogServiceGateway;
-        this.paymentServiceGateway = paymentServiceGateway;
-        this.subscriptionServiceGateway = subscriptionServiceGateway;
     }
 
     public OrderResponse createOrder(String idempotencyKey, OrderCreateRequest request) {
@@ -81,12 +69,17 @@ public class OrderService {
             return cached.get();
         }
 
-        OrderResponse response = executeSaga(idempotencyKey, request);
+        OrderResponse response = initiateSaga(request);
         idempotencyKeyService.complete(idempotencyKey, response, 201);
         return response;
     }
 
-    private OrderResponse executeSaga(String idempotencyKey, OrderCreateRequest request) {
+    /**
+     * Saga'nin sadece ILK adimini yurutur: siparisi PENDING_PAYMENT olarak kaydeder ve OrderCreated'i
+     * yayinlar. Cagiran (HTTP client) siparisin PENDING_PAYMENT durumuyla aninda cevap alir; odemenin
+     * tamamlanip tamamlanmadigini GET /orders/{id} ile ayrica sorgular (asenkron akisin dogal sonucu).
+     */
+    private OrderResponse initiateSaga(OrderCreateRequest request) {
         validateCustomerExists(request.getCustomerId());
         List<OrderItem> items = resolveItems(request.getItems());
         BigDecimal totalAmount = items.stream()
@@ -94,40 +87,10 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Order order = orderPersistenceService.createOrderRecord(request.getCustomerId(), totalAmount, items);
-        outboxEventService.publish(AGGREGATE_TYPE, order.getId(), "OrderCreated", toOrderResponse(order, items));
-
+        OrderResponse response = toOrderResponse(order, items);
+        outboxEventService.publish(AGGREGATE_TYPE, order.getId(), "OrderCreated", response);
         orderPersistenceService.markAwaitingPayment(order.getId());
-        PaymentClientResponse payment = paymentServiceGateway.createPayment(
-                "order-payment-" + idempotencyKey, paymentRequest(order));
-
-        if (!"COMPLETED".equals(payment.getStatus())) {
-            orderPersistenceService.cancelOrder(order.getId());
-            outboxEventService.publish(AGGREGATE_TYPE, order.getId(), "OrderCancelled", toOrderResponse(order, items));
-            return toOrderResponse(order, items);
-        }
-        orderPersistenceService.markOrderPaid(order.getId());
-
-        Optional<OrderItem> tariffItem = items.stream()
-                .filter(item -> "TARIFF".equals(item.getProductType()))
-                .findFirst();
-
-        if (tariffItem.isPresent()) {
-            try {
-                subscriptionServiceGateway.createSubscription(
-                        subscriptionRequest(request.getCustomerId(), tariffItem.get().getProductCode()));
-            } catch (Exception ex) {
-                log.warn("Subscription activation failed for order {}, triggering payment refund compensation",
-                        order.getId(), ex);
-                paymentServiceGateway.refund(payment.getId());
-                orderPersistenceService.cancelOrder(order.getId());
-                outboxEventService.publish(AGGREGATE_TYPE, order.getId(), "OrderCancelled", toOrderResponse(order, items));
-                return toOrderResponse(order, items);
-            }
-        }
-
-        orderPersistenceService.markOrderFulfilled(order.getId());
-        outboxEventService.publish(AGGREGATE_TYPE, order.getId(), "OrderConfirmed", toOrderResponse(order, items));
-        return toOrderResponse(order, items);
+        return response;
     }
 
     public OrderResponse getOrderResponseById(UUID id) {
@@ -136,8 +99,8 @@ public class OrderService {
 
     /**
      * Musteri/CSR tarafindan manuel tetiklenen iptal (FR-12) - saga basarisizliginda otomatik
-     * tetiklenen kompansasyondan (executeSaga icindeki cancelOrder cagrilari) farkli bir yol.
-     * Zaten tamamlanmis (FULFILLED) ya da iptal edilmis siparisler tekrar iptal edilemez.
+     * tetiklenen kompansasyondan (bkz. SagaEventConsumerConfig) farkli bir yol. Zaten tamamlanmis
+     * (FULFILLED) ya da iptal edilmis siparisler tekrar iptal edilemez.
      */
     public OrderResponse cancelOrder(UUID id) {
         Order order = getOrderById(id);
@@ -198,21 +161,6 @@ public class OrderService {
         } catch (FeignException.NotFound ex) {
             throw new ProductNotFoundException("Addon not found with code: " + code);
         }
-    }
-
-    private PaymentClientRequest paymentRequest(Order order) {
-        PaymentClientRequest request = new PaymentClientRequest();
-        request.setAmount(order.getTotalAmount());
-        request.setCurrency(order.getCurrency());
-        request.setMethod(PAYMENT_METHOD);
-        return request;
-    }
-
-    private SubscriptionClientRequest subscriptionRequest(UUID customerId, String tariffCode) {
-        SubscriptionClientRequest request = new SubscriptionClientRequest();
-        request.setCustomerId(customerId);
-        request.setTariffCode(tariffCode);
-        return request;
     }
 
     private OrderResponse toOrderResponse(Order order) {

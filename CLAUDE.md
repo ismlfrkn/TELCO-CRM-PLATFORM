@@ -152,7 +152,7 @@ Telco CRM Platform, bir GSM operatörünün ("TelcoX") abonelerine yönelik tüm
 | identity-service | 9001 | Kimlik & yetki | User, Role, Permission |
 | customer-service | 9002 | Müşteri yönetimi | Customer, Address, Document |
 | product-catalog-service | 9003 | Ürün kataloğu | Tariff, Addon, ProductOffering |
-| order-service | 9011 | Sipariş orkestrasyonu | Order, OrderItem, SagaState |
+| order-service | 9004 | Sipariş orkestrasyonu | Order, OrderItem, SagaState |
 | subscription-service | 9005 | Abonelik yaşam döngüsü | Subscription, MSISDN, SimCard |
 | usage-service | 9006 | Kullanım & kota | UsageRecord, Quota, CdrEvent |
 | billing-service | 9007 | Fatura üretimi | Invoice, InvoiceLine, BillCycle |
@@ -238,6 +238,7 @@ DB yazma + Kafka publish atomik olmalı. Her serviste outbox tablosu tutulur; ay
 | DB | PostgreSQL | 16, servis başına ayrı schema |
 | Cache | Redis | 7 |
 | Broker | Apache Kafka | 3.7+ (KRaft mode) |
+| Messaging Abstraction | Spring Cloud Stream (Kafka binder) | `spring-cloud-starter-stream-kafka` — outbox publisher'lar `StreamBridge` ile, consumer'lar fonksiyonel `Consumer<T>` bean'leriyle yazılır; `KafkaTemplate`/`@KafkaListener` kullanılmaz. Binding ayarları `application.yml`'de `spring.cloud.stream.bindings.*` altında tanımlanır. |
 | Migration | Flyway | Her serviste |
 | ORM | Spring Data JPA + Hibernate | — |
 | Mapping | MapStruct | — |
@@ -314,6 +315,7 @@ Bu bağlamı kullanan bir AI, aşağıdaki prensiplere bağlı kalmalı:
 6. **Güvenlik kararlarında Bölüm 12'yi referans al** (gateway'de JWT doğrulama, servislerde tekrar doğrulama yapılmaz, PII şifreleme zorunlu).
 7. **Yeni kod/servis üretirken Bölüm 10'daki teknoloji yığınının dışına çıkma** (ör. farklı bir ORM, farklı bir mesaj broker önerme).
 8. **Belirsizlik durumunda varsayım yapmadan önce hangi bölümle çeliştiğini belirt** ve kullanıcıya sor.
+
 
 ---
 

@@ -20,6 +20,34 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  cloud:
+    function:
+      definition: subscriptionEvents;paymentEvents;usageEvents
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        subscriptionEvents-in-0:
+          destination: telco.subscription.events
+          group: billing-service
+          content-type: application/json
+        paymentEvents-in-0:
+          destination: telco.payment.events
+          group: billing-service
+          content-type: application/json
+        usageEvents-in-0:
+          destination: telco.usage.events
+          group: billing-service
+          content-type: application/json
+        billingEvents-out-0:
+          destination: telco.billing.events
+          content-type: application/json
+
+outbox:
+  publisher:
+    poll-interval-ms: 5000
+    batch-size: 20
 
 eureka:
   client:

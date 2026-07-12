@@ -31,6 +31,9 @@ public class Invoice {
     @Column(name = "subscription_id", nullable = false)
     private UUID subscriptionId; // subscription-service'e ait, cross-service referans (FK degil)
 
+    @Column(name = "tariff_code")
+    private String tariffCode; // product-catalog-service'e ait, cross-service referans (FK degil)
+
     @Column(name = "period_start", nullable = false)
     private LocalDate periodStart;
 
@@ -82,6 +85,9 @@ public class Invoice {
 
     public UUID getSubscriptionId() { return subscriptionId; }
     public void setSubscriptionId(UUID subscriptionId) { this.subscriptionId = subscriptionId; }
+
+    public String getTariffCode() { return tariffCode; }
+    public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
 
     public LocalDate getPeriodStart() { return periodStart; }
     public void setPeriodStart(LocalDate periodStart) { this.periodStart = periodStart; }

@@ -26,6 +26,15 @@ spring:
       port: 6379
   cache:
     type: redis
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        catalogEvents-out-0:
+          destination: telco.catalog.events
+          content-type: application/json
 
 # Bölüm 8.2: tariff/addon by-code cache'inin TTL'i (saniye). Cache-aside: yazma yollarinda
 # (update/patch/delete/linkAddon) ilgili anahtar aninda evict edilir; TTL sadece kacirilan
@@ -33,6 +42,11 @@ spring:
 product-catalog:
   cache:
     ttl-seconds: 600
+
+outbox:
+  publisher:
+    poll-interval-ms: 5000
+    batch-size: 20
 
 eureka:
   client:
