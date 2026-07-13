@@ -40,11 +40,20 @@
         <spring-cloud.version>2023.0.6</spring-cloud.version>
         <!-- Boot 3.3.13'un yonettigi 1.19.8, org.testcontainers.kafka.KafkaContainer'in resmi
              apache/kafka image'larini desteklemesi icin yetersiz (bu destek 1.20.1'de geldi).
-             Outbox->Kafka publisher testleri icin elle override ediliyor. -->
-        <testcontainers.version>1.20.4</testcontainers.version>
+             1.20.4, guncel Docker Desktop surumlerinin engine API proxy'siyle npipe uzerinden
+             API version negotiation'i basarisiz oluyor (bos Info govdesiyle HTTP 400 donuyor,
+             "Could not find a valid Docker environment" hatasi); 1.21.4'teki docker-java istemcisi
+             bunu duzeltiyor. Outbox->Kafka publisher testleri icin elle override ediliyor. -->
+        <testcontainers.version>1.21.4</testcontainers.version>
         <!-- Her servis ayrı Swagger UI (Bölüm 11) - domain servisleri kendi pom.xml'inde
-             springdoc-openapi-starter-webmvc-ui bağımlılığını bu sürümle ekler. -->
-        <springdoc.version>2.8.17</springdoc.version>
+             springdoc-openapi-starter-webmvc-ui bağımlılığını bu sürümle ekler.
+             2.7+/2.8.x, Spring Framework 6.2 (Boot 3.4+) gerektiren
+             org.springframework.web.servlet.resource.LiteWebJarsResourceResolver'a bagimli;
+             Boot 3.3.13'un yonettigi Spring Framework 6.1.21'de bu sinif yok, uygulama gercekten
+             calistirildiginda (web ortaminda) NoClassDefFoundError ile cokuyor - @SpringBootTest'in
+             WebEnvironment.NONE testleri bunu tetiklemedigi icin bu artimlist testlerde yakalanmiyordu.
+             2.6.x, Boot 3.3.x ile uyumlu son minor seri. -->
+        <springdoc.version>2.6.0</springdoc.version>
         <!-- Resilience4j (Bölüm 10) - circuit breaker/retry/bulkhead, order-service'in hala
              senkron kalan Customer/Catalog dogrulama cagrilarinda kullaniliyor (bkz.
              order-service client/gateway/*Gateway). -->
