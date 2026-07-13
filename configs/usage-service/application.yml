@@ -20,6 +20,26 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  cloud:
+    function:
+      definition: cdrEvents
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+        cdrEvents-in-0:
+          destination: telco.cdr.events
+          group: usage-service
+          content-type: application/json
+        usageEvents-out-0:
+          destination: telco.usage.events
+          content-type: application/json
+
+outbox:
+  publisher:
+    poll-interval-ms: 5000
+    batch-size: 20
 
 eureka:
   client:

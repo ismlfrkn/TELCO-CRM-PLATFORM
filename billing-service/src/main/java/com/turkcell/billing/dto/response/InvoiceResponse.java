@@ -11,6 +11,7 @@ public class InvoiceResponse {
     private UUID id;
     private UUID customerId;
     private UUID subscriptionId;
+    private String tariffCode;
     private LocalDate periodStart;
     private LocalDate periodEnd;
     private BigDecimal subTotal;
@@ -30,6 +31,9 @@ public class InvoiceResponse {
 
     public UUID getSubscriptionId() { return subscriptionId; }
     public void setSubscriptionId(UUID subscriptionId) { this.subscriptionId = subscriptionId; }
+
+    public String getTariffCode() { return tariffCode; }
+    public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
 
     public LocalDate getPeriodStart() { return periodStart; }
     public void setPeriodStart(LocalDate periodStart) { this.periodStart = periodStart; }

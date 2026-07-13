@@ -59,7 +59,7 @@ public class CustomerService {
 
         customer = customerRepository.save(customer);
         CustomerResponse response = customerMapper.toResponse(customer);
-        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerCreated", response);
+        outboxEventService.publish(AGGREGATE_TYPE, customer.getId(), "CustomerRegistered", response);
         auditLogService.record("CUSTOMER_CREATED", AGGREGATE_TYPE, customer.getId(), null, response);
         return response;
     }

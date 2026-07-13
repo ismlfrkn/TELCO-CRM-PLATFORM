@@ -7,12 +7,16 @@ import com.turkcell.subscription.exception.InvalidSubscriptionTransitionExceptio
 import com.turkcell.subscription.exception.SubscriptionNotFoundException;
 import com.turkcell.subscription.mapper.SubscriptionMapper;
 import com.turkcell.subscription.repository.SubscriptionRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -39,19 +43,50 @@ public class SubscriptionService {
     private final SubscriptionMapper subscriptionMapper;
     private final OutboxEventService outboxEventService;
     private final AuditLogService auditLogService;
+    private final TransactionTemplate newSubscriptionTransactionTemplate;
 
     public SubscriptionService(SubscriptionRepository subscriptionRepository, MsisdnPoolService msisdnPoolService,
                                 SubscriptionMapper subscriptionMapper, OutboxEventService outboxEventService,
-                                AuditLogService auditLogService) {
+                                AuditLogService auditLogService, PlatformTransactionManager transactionManager) {
         this.subscriptionRepository = subscriptionRepository;
         this.msisdnPoolService = msisdnPoolService;
         this.subscriptionMapper = subscriptionMapper;
         this.outboxEventService = outboxEventService;
         this.auditLogService = auditLogService;
+
+        // REQUIRES_NEW: MSISDN tahsisi + Subscription insert'i TEK bir izole transaction'da yapilir -
+        // order_id UNIQUE kisitina carpip rollback olursa, tahsis edilen MSISDN de ayni transaction
+        // icinde geri alinir (sizinti olmaz). payment-service'teki createPayment ile ayni desen.
+        this.newSubscriptionTransactionTemplate = new TransactionTemplate(transactionManager);
+        this.newSubscriptionTransactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
     }
 
-    @Transactional
+    /**
+     * request.orderId doluysa (PaymentCompleted event'i uzerinden tetiklenen aktivasyon), ayni siparis
+     * icin ikinci kez cagrilirsa (en-az-bir-kez teslim) yeni bir abonelik acmaz, ilk sonucu dondurur.
+     * orderId bossa (dogrudan REST cagrisi) idempotency kontrolu atlanir, eski davranis aynen sürer.
+     */
     public SubscriptionResponse createSubscription(SubscriptionCreateRequest request) {
+        if (request.getOrderId() != null) {
+            Optional<Subscription> existing = subscriptionRepository.findByOrderId(request.getOrderId());
+            if (existing.isPresent()) {
+                return subscriptionMapper.toResponse(existing.get());
+            }
+        }
+
+        try {
+            return newSubscriptionTransactionTemplate.execute(status -> processNewSubscription(request));
+        } catch (DataIntegrityViolationException ex) {
+            if (request.getOrderId() != null) {
+                return subscriptionRepository.findByOrderId(request.getOrderId())
+                        .map(subscriptionMapper::toResponse)
+                        .orElseThrow(() -> ex);
+            }
+            throw ex;
+        }
+    }
+
+    private SubscriptionResponse processNewSubscription(SubscriptionCreateRequest request) {
         String msisdn = (request.getMsisdn() != null && !request.getMsisdn().isBlank())
                 ? msisdnPoolService.allocateSpecific(request.getMsisdn())
                 : msisdnPoolService.allocateNext();
@@ -61,6 +96,7 @@ public class SubscriptionService {
         subscription.setMsisdn(msisdn);
         subscription.setTariffCode(request.getTariffCode());
         subscription.setTariffVersion(request.getTariffVersion());
+        subscription.setOrderId(request.getOrderId());
         subscription.setStatus(STATUS_ACTIVE);
         subscription.setActivatedAt(Instant.now());
         subscription = subscriptionRepository.save(subscription);
@@ -82,6 +118,15 @@ public class SubscriptionService {
 
     public Page<SubscriptionResponse> getSubscriptionsByCustomer(UUID customerId, Pageable pageable) {
         return subscriptionRepository.findAllByCustomerId(customerId, pageable).map(subscriptionMapper::toResponse);
+    }
+
+    /**
+     * FR-21: billing-service'in bill-run'i otomatik tetikleyebilmesi icin - "hangi aboneler
+     * faturalanacak" bilgisini artik cagiran taraf elle vermek yerine, billing-service bu endpoint'i
+     * senkron cagirip aktif abone listesini kendisi cekiyor (bkz. billing-service BillingRunService).
+     */
+    public Page<SubscriptionResponse> getActiveSubscriptions(Pageable pageable) {
+        return subscriptionRepository.findAllByStatus(STATUS_ACTIVE, pageable).map(subscriptionMapper::toResponse);
     }
 
     @Transactional

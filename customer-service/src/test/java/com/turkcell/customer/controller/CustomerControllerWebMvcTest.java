@@ -18,7 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -50,19 +50,19 @@ class CustomerControllerWebMvcTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
+    @MockBean
     private CustomerService customerService;
 
-    @MockitoBean
+    @MockBean
     private AddressService addressService;
 
-    @MockitoBean
+    @MockBean
     private DocumentService documentService;
 
     // GatewayHeaderAuthenticationFilter bean'i @WebMvcTest'in Filter-tipi tarama kapsamina giriyor
     // (addFilters=false sadece MockMvc zincirinden cikarir, context'ten degil) ve bu bean'e ihtiyac
     // duyuyor - gercekte hic calismiyor, sadece context refresh olabilsin diye mock'lanmasi gerekiyor.
-    @MockitoBean
+    @MockBean
     private GatewayTrustProperties gatewayTrustProperties;
 
     @AfterEach

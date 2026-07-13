@@ -45,6 +45,17 @@ public class Tariff {
     @Column(name = "data_mb_included", nullable = false)
     private int dataMbIncluded;
 
+    // FR-20/FR-22: kota asimi ucretlendirmesinde kullanilan birim fiyatlar (billing-service bill-run
+    // sirasinda usage_aggregates'teki asim miktarini bu oranlarla carpar).
+    @Column(name = "overage_rate_per_minute", nullable = false)
+    private BigDecimal overageRatePerMinute = BigDecimal.ZERO;
+
+    @Column(name = "overage_rate_per_sms", nullable = false)
+    private BigDecimal overageRateSms = BigDecimal.ZERO;
+
+    @Column(name = "overage_rate_per_mb", nullable = false)
+    private BigDecimal overageRatePerMb = BigDecimal.ZERO;
+
     @Column(nullable = false)
     private String status;
 
@@ -130,6 +141,15 @@ public class Tariff {
 
     public int getDataMbIncluded() { return dataMbIncluded; }
     public void setDataMbIncluded(int dataMbIncluded) { this.dataMbIncluded = dataMbIncluded; }
+
+    public BigDecimal getOverageRatePerMinute() { return overageRatePerMinute; }
+    public void setOverageRatePerMinute(BigDecimal overageRatePerMinute) { this.overageRatePerMinute = overageRatePerMinute; }
+
+    public BigDecimal getOverageRateSms() { return overageRateSms; }
+    public void setOverageRateSms(BigDecimal overageRateSms) { this.overageRateSms = overageRateSms; }
+
+    public BigDecimal getOverageRatePerMb() { return overageRatePerMb; }
+    public void setOverageRatePerMb(BigDecimal overageRatePerMb) { this.overageRatePerMb = overageRatePerMb; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

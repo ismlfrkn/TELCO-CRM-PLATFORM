@@ -11,6 +11,8 @@ import com.turkcell.payment.exception.PaymentNotFoundException;
 import com.turkcell.payment.mapper.PaymentMapper;
 import com.turkcell.payment.repository.PaymentAttemptRepository;
 import com.turkcell.payment.repository.PaymentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -26,6 +29,8 @@ import java.util.UUID;
  */
 @Service
 public class PaymentService {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private static final String STATUS_PENDING = "PENDING";
     private static final String STATUS_COMPLETED = "COMPLETED";
@@ -96,6 +101,9 @@ public class PaymentService {
         payment.setCurrency(request.getCurrency());
         payment.setMethod(request.getMethod());
         payment.setWalletId(request.getWalletId());
+        payment.setOrderId(request.getOrderId());
+        payment.setCustomerId(request.getCustomerId());
+        payment.setTariffCode(request.getTariffCode());
         payment.setStatus(STATUS_PENDING);
         payment = paymentRepository.save(payment);
 
@@ -176,6 +184,27 @@ public class PaymentService {
         outboxEventService.publish(AGGREGATE_TYPE, payment.getId(), "PaymentRefunded", response);
         auditLogService.record("PAYMENT_REFUNDED", AGGREGATE_TYPE, payment.getId(), null, response);
         return response;
+    }
+
+    /**
+     * SubscriptionActivationFailed kompansasyon consumer'i icin: siparise ait odemeyi bulup refund
+     * eder. Ayni event iki kez gelirse (en-az-bir-kez teslim) ikinci cagri "sadece COMPLETED odemeler
+     * refund edilebilir" istisnasina duser - bu durum burada YUTULUR (zaten refund edilmis demektir),
+     * consumer'i hata ile durdurmaz.
+     */
+    @Transactional
+    public void refundByOrderIdIfCompleted(UUID orderId) {
+        Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
+        if (payment.isEmpty()) {
+            log.warn("No payment found for order {}, skipping refund compensation", orderId);
+            return;
+        }
+        if (!STATUS_COMPLETED.equals(payment.get().getStatus())) {
+            log.info("Payment {} for order {} is already {} (not COMPLETED), skipping refund",
+                    payment.get().getId(), orderId, payment.get().getStatus());
+            return;
+        }
+        refund(payment.get().getId());
     }
 
     private MockPspResult charge(Payment payment, boolean simulateFailure) {

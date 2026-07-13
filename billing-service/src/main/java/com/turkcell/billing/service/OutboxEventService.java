@@ -11,8 +11,7 @@ import java.util.UUID;
 /**
  * Domain event'leri outbox tablosuna yazar. Cagiran servis metodu zaten @Transactional oldugu icin
  * bu satir, is durumundaki degisiklikle AYNI DB transaction'inda commit olur (outbox pattern).
- * Bu satirlari gercekten Kafka'ya basacak bir publisher worker henuz yok (diger servislerle ayni
- * bilincli kapsam disi birakma).
+ * Yazilan satirlar OutboxEventPublisher tarafindan periyodik taranip Kafka'ya gonderilir.
  */
 @Service
 public class OutboxEventService {

@@ -28,6 +28,12 @@ public class PaymentCreateRequest {
     // Gercek bir PSP entegrasyonu olmadigi icin test amacli: true ise mock PSP odemeyi reddeder.
     private boolean simulateFailure;
 
+    // Sadece order-service'ten tuketilen OrderCreated event'i uzerinden gelen odemelerde dolu -
+    // saga korelasyon verisi, REST uzerinden dogrudan cagrilan odemelerde bos kalir.
+    private UUID orderId;
+    private UUID customerId;
+    private String tariffCode;
+
     public UUID getInvoiceId() { return invoiceId; }
     public void setInvoiceId(UUID invoiceId) { this.invoiceId = invoiceId; }
 
@@ -45,4 +51,13 @@ public class PaymentCreateRequest {
 
     public boolean isSimulateFailure() { return simulateFailure; }
     public void setSimulateFailure(boolean simulateFailure) { this.simulateFailure = simulateFailure; }
+
+    public UUID getOrderId() { return orderId; }
+    public void setOrderId(UUID orderId) { this.orderId = orderId; }
+
+    public UUID getCustomerId() { return customerId; }
+    public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+
+    public String getTariffCode() { return tariffCode; }
+    public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
 }

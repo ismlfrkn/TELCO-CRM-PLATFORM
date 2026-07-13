@@ -1,18 +1,23 @@
 package com.turkcell.billing.service;
 
+import com.turkcell.billing.client.ProductCatalogServiceClient;
+import com.turkcell.billing.client.TariffClientDto;
 import com.turkcell.billing.dto.request.InvoiceCreateRequest;
 import com.turkcell.billing.dto.request.InvoiceLineRequest;
 import com.turkcell.billing.dto.response.InvoiceResponse;
 import com.turkcell.billing.entity.Invoice;
+import com.turkcell.billing.entity.UsageAggregate;
 import com.turkcell.billing.exception.InvalidInvoiceStateException;
 import com.turkcell.billing.exception.InvoiceNotFoundException;
 import com.turkcell.billing.mapper.InvoiceLineMapper;
 import com.turkcell.billing.mapper.InvoiceMapper;
 import com.turkcell.billing.repository.InvoiceLineRepository;
 import com.turkcell.billing.repository.InvoiceRepository;
+import com.turkcell.billing.repository.UsageAggregateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.mockito.ArgumentCaptor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.math.BigDecimal;
@@ -25,28 +30,34 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class InvoiceServiceTest {
 
     private InvoiceRepository invoiceRepository;
     private InvoiceLineRepository invoiceLineRepository;
+    private UsageAggregateRepository usageAggregateRepository;
     private BillCycleService billCycleService;
     private OutboxEventService outboxEventService;
+    private ProductCatalogServiceClient productCatalogServiceClient;
     private InvoiceService invoiceService;
 
     @BeforeEach
     void setUp() {
         invoiceRepository = mock(InvoiceRepository.class);
         invoiceLineRepository = mock(InvoiceLineRepository.class);
+        usageAggregateRepository = mock(UsageAggregateRepository.class);
         billCycleService = mock(BillCycleService.class);
         outboxEventService = mock(OutboxEventService.class);
+        productCatalogServiceClient = mock(ProductCatalogServiceClient.class);
         InvoiceMapper invoiceMapper = Mappers.getMapper(InvoiceMapper.class);
         InvoiceLineMapper invoiceLineMapper = Mappers.getMapper(InvoiceLineMapper.class);
         PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
 
-        invoiceService = new InvoiceService(invoiceRepository, invoiceLineRepository, billCycleService,
-                invoiceMapper, invoiceLineMapper, outboxEventService, transactionManager);
+        invoiceService = new InvoiceService(invoiceRepository, invoiceLineRepository, usageAggregateRepository,
+                billCycleService, invoiceMapper, invoiceLineMapper, outboxEventService, productCatalogServiceClient,
+                transactionManager);
 
         when(invoiceRepository.save(any())).thenAnswer(inv -> {
             Invoice invoice = inv.getArgument(0);
@@ -57,6 +68,8 @@ class InvoiceServiceTest {
         });
         when(invoiceLineRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
         when(invoiceLineRepository.findAllByInvoiceId(any())).thenReturn(List.of());
+        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(any(), any(), any()))
+                .thenReturn(List.of());
     }
 
     @Test
@@ -126,6 +139,112 @@ class InvoiceServiceTest {
         assertThat(response.getId()).isEqualTo(existing.getId());
         verifyNoInteractions(billCycleService);
         verifyNoInteractions(outboxEventService);
+    }
+
+    @Test
+    void createInvoice_withoutTariffCode_skipsOverageLookupEntirely() {
+        UUID subscriptionId = UUID.randomUUID();
+        when(invoiceRepository.findBySubscriptionIdAndPeriodStartAndPeriodEnd(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        InvoiceCreateRequest request = requestWithLines(subscriptionId, lineOf("Monthly fee", "1", "100.00"));
+
+        invoiceService.createInvoice(request);
+
+        verifyNoInteractions(usageAggregateRepository);
+        verifyNoInteractions(productCatalogServiceClient);
+    }
+
+    @Test
+    void createInvoice_withTariffCodeAndUnclaimedOverage_addsOverageLineAndClaimsIt() {
+        UUID subscriptionId = UUID.randomUUID();
+        when(invoiceRepository.findBySubscriptionIdAndPeriodStartAndPeriodEnd(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        LocalDate periodStart = LocalDate.of(2026, 7, 1);
+        LocalDate periodEnd = LocalDate.of(2026, 7, 31);
+        UsageAggregate overage = usageAggregateOf(subscriptionId, "VOICE", "100", periodStart, periodEnd);
+        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
+                subscriptionId, periodStart, periodEnd)).thenReturn(List.of(overage));
+
+        TariffClientDto tariff = new TariffClientDto();
+        tariff.setCode("STD-POSTPAID-100");
+        tariff.setOverageRatePerMinute(new BigDecimal("0.50"));
+        when(productCatalogServiceClient.getTariff("STD-POSTPAID-100")).thenReturn(tariff);
+
+        InvoiceCreateRequest request = requestWithLines(subscriptionId, lineOf("Monthly fee", "1", "100.00"));
+        request.setPeriodStart(periodStart);
+        request.setPeriodEnd(periodEnd);
+        request.setTariffCode("STD-POSTPAID-100");
+
+        InvoiceResponse response = invoiceService.createInvoice(request);
+
+        // 100.00 aylik ucret + (100 dakika * 0.50) = 150.00 subTotal, %20 KDV ile 180.00 grandTotal
+        assertThat(response.getSubTotal()).isEqualByComparingTo("150.00");
+        assertThat(response.getGrandTotal()).isEqualByComparingTo("180.00");
+        assertThat(response.getLines()).extracting("description")
+                .anyMatch(desc -> desc.toString().contains("Ses asim ucreti"));
+
+        ArgumentCaptor<List<UsageAggregate>> captor = ArgumentCaptor.forClass(List.class);
+        verify(usageAggregateRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getInvoiceId()).isEqualTo(response.getId());
+    }
+
+    @Test
+    void createInvoice_withMultipleOverageEventsForSameCdrType_combinesIntoOneLine() {
+        UUID subscriptionId = UUID.randomUUID();
+        when(invoiceRepository.findBySubscriptionIdAndPeriodStartAndPeriodEnd(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        LocalDate periodStart = LocalDate.of(2026, 7, 1);
+        LocalDate periodEnd = LocalDate.of(2026, 7, 31);
+        UsageAggregate first = usageAggregateOf(subscriptionId, "VOICE", "60", periodStart, periodEnd);
+        UsageAggregate second = usageAggregateOf(subscriptionId, "VOICE", "40", periodStart, periodEnd);
+        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
+                subscriptionId, periodStart, periodEnd)).thenReturn(List.of(first, second));
+
+        TariffClientDto tariff = new TariffClientDto();
+        tariff.setOverageRatePerMinute(new BigDecimal("1.00"));
+        when(productCatalogServiceClient.getTariff("STD-POSTPAID-100")).thenReturn(tariff);
+
+        InvoiceCreateRequest request = requestWithLines(subscriptionId, lineOf("Monthly fee", "1", "0.00"));
+        request.setPeriodStart(periodStart);
+        request.setPeriodEnd(periodEnd);
+        request.setTariffCode("STD-POSTPAID-100");
+
+        InvoiceResponse response = invoiceService.createInvoice(request);
+
+        // 60+40=100 dakika birlesik, tek satir: 100 * 1.00 = 100.00
+        assertThat(response.getLines()).hasSize(2); // Monthly fee (0.00) + tek birlesik asim satiri
+        assertThat(response.getSubTotal()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void createInvoice_withTariffCodeButZeroOverageRate_doesNotAddOverageLine() {
+        UUID subscriptionId = UUID.randomUUID();
+        when(invoiceRepository.findBySubscriptionIdAndPeriodStartAndPeriodEnd(any(), any(), any()))
+                .thenReturn(Optional.empty());
+
+        LocalDate periodStart = LocalDate.of(2026, 7, 1);
+        LocalDate periodEnd = LocalDate.of(2026, 7, 31);
+        UsageAggregate overage = usageAggregateOf(subscriptionId, "VOICE", "100", periodStart, periodEnd);
+        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
+                subscriptionId, periodStart, periodEnd)).thenReturn(List.of(overage));
+
+        TariffClientDto tariff = new TariffClientDto(); // overageRatePerMinute null/0 varsayilan
+        when(productCatalogServiceClient.getTariff("STD-POSTPAID-100")).thenReturn(tariff);
+
+        InvoiceCreateRequest request = requestWithLines(subscriptionId, lineOf("Monthly fee", "1", "100.00"));
+        request.setPeriodStart(periodStart);
+        request.setPeriodEnd(periodEnd);
+        request.setTariffCode("STD-POSTPAID-100");
+
+        InvoiceResponse response = invoiceService.createInvoice(request);
+
+        assertThat(response.getSubTotal()).isEqualByComparingTo("100.00"); // asim satiri eklenmedi
+        // rate yoksa/0 ise claim de edilmez - asim kaydi bir sonraki bill-run'da hala secilebilir olmali
+        verify(usageAggregateRepository, never()).saveAll(any());
     }
 
     @Test
@@ -206,6 +325,19 @@ class InvoiceServiceTest {
         line.setQuantity(new BigDecimal(quantity));
         line.setUnitPrice(new BigDecimal(unitPrice));
         return line;
+    }
+
+    private UsageAggregate usageAggregateOf(UUID subscriptionId, String cdrType, String overageQuantity,
+                                             LocalDate periodStart, LocalDate periodEnd) {
+        UsageAggregate aggregate = new UsageAggregate();
+        aggregate.setId(UUID.randomUUID());
+        aggregate.setSubscriptionId(subscriptionId);
+        aggregate.setCdrType(cdrType);
+        aggregate.setOverageQuantity(new BigDecimal(overageQuantity));
+        aggregate.setPeriodStart(periodStart);
+        aggregate.setPeriodEnd(periodEnd);
+        aggregate.setSourceEventId(UUID.randomUUID());
+        return aggregate;
     }
 
     private Invoice existingInvoice(UUID subscriptionId, LocalDate periodStart, LocalDate periodEnd) {

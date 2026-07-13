@@ -1,16 +1,20 @@
 package com.turkcell.billing.service;
 
+import com.turkcell.billing.client.ProductCatalogServiceClient;
+import com.turkcell.billing.client.TariffClientDto;
 import com.turkcell.billing.dto.request.InvoiceCreateRequest;
 import com.turkcell.billing.dto.request.InvoiceLineRequest;
 import com.turkcell.billing.dto.response.InvoiceResponse;
 import com.turkcell.billing.entity.Invoice;
 import com.turkcell.billing.entity.InvoiceLine;
+import com.turkcell.billing.entity.UsageAggregate;
 import com.turkcell.billing.exception.InvalidInvoiceStateException;
 import com.turkcell.billing.exception.InvoiceNotFoundException;
 import com.turkcell.billing.mapper.InvoiceLineMapper;
 import com.turkcell.billing.mapper.InvoiceMapper;
 import com.turkcell.billing.repository.InvoiceLineRepository;
 import com.turkcell.billing.repository.InvoiceRepository;
+import com.turkcell.billing.repository.UsageAggregateRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -39,22 +44,27 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceLineRepository invoiceLineRepository;
+    private final UsageAggregateRepository usageAggregateRepository;
     private final BillCycleService billCycleService;
     private final InvoiceMapper invoiceMapper;
     private final InvoiceLineMapper invoiceLineMapper;
     private final OutboxEventService outboxEventService;
+    private final ProductCatalogServiceClient productCatalogServiceClient;
     private final TransactionTemplate createInvoiceTransactionTemplate;
 
     public InvoiceService(InvoiceRepository invoiceRepository, InvoiceLineRepository invoiceLineRepository,
-                           BillCycleService billCycleService, InvoiceMapper invoiceMapper,
-                           InvoiceLineMapper invoiceLineMapper, OutboxEventService outboxEventService,
+                           UsageAggregateRepository usageAggregateRepository, BillCycleService billCycleService,
+                           InvoiceMapper invoiceMapper, InvoiceLineMapper invoiceLineMapper,
+                           OutboxEventService outboxEventService, ProductCatalogServiceClient productCatalogServiceClient,
                            PlatformTransactionManager transactionManager) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceLineRepository = invoiceLineRepository;
+        this.usageAggregateRepository = usageAggregateRepository;
         this.billCycleService = billCycleService;
         this.invoiceMapper = invoiceMapper;
         this.invoiceLineMapper = invoiceLineMapper;
         this.outboxEventService = outboxEventService;
+        this.productCatalogServiceClient = productCatalogServiceClient;
 
         // REQUIRES_NEW: payment-service/usage-service'teki idempotency dersinin ucuncu uygulamasi -
         // ayni (subscriptionId, periodStart, periodEnd) icin cift fatura kesilmesini engeller.
@@ -87,6 +97,7 @@ public class InvoiceService {
         Invoice invoice = new Invoice();
         invoice.setCustomerId(request.getCustomerId());
         invoice.setSubscriptionId(request.getSubscriptionId());
+        invoice.setTariffCode(request.getTariffCode());
         invoice.setPeriodStart(request.getPeriodStart());
         invoice.setPeriodEnd(request.getPeriodEnd());
         invoice.setDueDate(request.getDueDate());
@@ -108,6 +119,26 @@ public class InvoiceService {
             lines.add(line);
         }
 
+        List<UsageAggregate> unclaimed = findUnclaimedOverage(request);
+        List<UsageAggregate> claimedOverage = new ArrayList<>();
+        if (!unclaimed.isEmpty()) {
+            TariffClientDto tariff = productCatalogServiceClient.getTariff(request.getTariffCode());
+            for (Map.Entry<String, List<UsageAggregate>> entry : groupByType(unclaimed).entrySet()) {
+                BigDecimal totalQuantity = entry.getValue().stream()
+                        .map(UsageAggregate::getOverageQuantity)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                InvoiceLine overageLine = buildOverageLine(entry.getKey(), totalQuantity, tariff);
+                if (overageLine == null) {
+                    // Oran tanimli/pozitif degil - bu grup faturalanmaz VE claim edilmez, boylece
+                    // ileride tarifeye oran eklenirse ayni asim hala islenebilir kalir.
+                    continue;
+                }
+                subTotal = subTotal.add(overageLine.getLineTotal());
+                lines.add(overageLine);
+                claimedOverage.addAll(entry.getValue());
+            }
+        }
+
         BigDecimal tax = subTotal.multiply(TAX_RATE).setScale(2, RoundingMode.HALF_UP);
         invoice.setSubTotal(subTotal);
         invoice.setTax(tax);
@@ -120,11 +151,83 @@ public class InvoiceService {
         }
         invoiceLineRepository.saveAll(lines);
 
+        if (!claimedOverage.isEmpty()) {
+            for (UsageAggregate aggregate : claimedOverage) {
+                aggregate.setInvoiceId(invoice.getId());
+            }
+            usageAggregateRepository.saveAll(claimedOverage);
+        }
+
         billCycleService.advanceIfExists(request.getCustomerId());
 
         InvoiceResponse response = toResponse(invoice, lines);
         outboxEventService.publish(AGGREGATE_TYPE, invoice.getId(), "InvoiceGenerated", response);
         return response;
+    }
+
+    /**
+     * tariffCode bos birakilirsa asim hesaplamasi tamamen atlanir (geriye donuk uyumlu - mevcut
+     * davranis degismez). Doluysa, ayni abonelik+donem icin henuz faturalanmamis (invoiceId NULL)
+     * usage_aggregates satirlari doner - period alanlari Invoice'in donemiyle birebir eslesmeli
+     * (usage-service'in Quota donemiyle bill-run'in fatura donemi ayni varsayilir).
+     */
+    private List<UsageAggregate> findUnclaimedOverage(InvoiceCreateRequest request) {
+        if (request.getTariffCode() == null) {
+            return List.of();
+        }
+        return usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
+                request.getSubscriptionId(), request.getPeriodStart(), request.getPeriodEnd());
+    }
+
+    /**
+     * Ayni donemde ayni cdrType icin birden fazla UsageAggregated event'i gelmis olabilir (orn. iki
+     * ayri CDR ayni ay icinde asima neden olmus) - tek bir birlesik satirda toplanir, faturayi
+     * gereksiz satirlarla kalabalıklastirmaz. Orijinal UsageAggregate referanslari saklanir ki
+     * hangilerinin gercekten faturalandigi (claim edildigi) sonradan belirlenebilsin.
+     */
+    private Map<String, List<UsageAggregate>> groupByType(List<UsageAggregate> unclaimed) {
+        return unclaimed.stream().collect(Collectors.groupingBy(UsageAggregate::getCdrType));
+    }
+
+    private InvoiceLine buildOverageLine(String cdrType, BigDecimal totalQuantity, TariffClientDto tariff) {
+        BigDecimal rate = overageRateFor(cdrType, tariff);
+        if (rate == null || rate.signum() <= 0 || totalQuantity.signum() <= 0) {
+            return null;
+        }
+
+        InvoiceLine line = new InvoiceLine();
+        line.setDescription(overageDescription(cdrType) + " (" + totalQuantity + " " + overageUnit(cdrType) + " asim)");
+        line.setQuantity(totalQuantity);
+        line.setUnitPrice(rate);
+        line.setLineTotal(totalQuantity.multiply(rate).setScale(2, RoundingMode.HALF_UP));
+        return line;
+    }
+
+    private BigDecimal overageRateFor(String cdrType, TariffClientDto tariff) {
+        return switch (cdrType) {
+            case "VOICE" -> tariff.getOverageRatePerMinute();
+            case "SMS" -> tariff.getOverageRateSms();
+            case "DATA" -> tariff.getOverageRatePerMb();
+            default -> null;
+        };
+    }
+
+    private String overageDescription(String cdrType) {
+        return switch (cdrType) {
+            case "VOICE" -> "Ses asim ucreti";
+            case "SMS" -> "SMS asim ucreti";
+            case "DATA" -> "Data asim ucreti";
+            default -> cdrType + " asim ucreti";
+        };
+    }
+
+    private String overageUnit(String cdrType) {
+        return switch (cdrType) {
+            case "VOICE" -> "dakika";
+            case "SMS" -> "adet";
+            case "DATA" -> "MB";
+            default -> "birim";
+        };
     }
 
     public InvoiceResponse getInvoiceResponseById(UUID id) {

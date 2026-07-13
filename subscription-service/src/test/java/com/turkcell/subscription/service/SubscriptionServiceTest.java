@@ -10,6 +10,7 @@ import com.turkcell.subscription.repository.SubscriptionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -36,9 +37,10 @@ class SubscriptionServiceTest {
         outboxEventService = mock(OutboxEventService.class);
         auditLogService = mock(AuditLogService.class);
         SubscriptionMapper subscriptionMapper = Mappers.getMapper(SubscriptionMapper.class);
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
 
-        subscriptionService = new SubscriptionService(
-                subscriptionRepository, msisdnPoolService, subscriptionMapper, outboxEventService, auditLogService);
+        subscriptionService = new SubscriptionService(subscriptionRepository, msisdnPoolService, subscriptionMapper,
+                outboxEventService, auditLogService, transactionManager);
 
         when(subscriptionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
@@ -176,6 +178,19 @@ class SubscriptionServiceTest {
 
         assertThatThrownBy(() -> subscriptionService.getSubscriptionById(id))
                 .isInstanceOf(SubscriptionNotFoundException.class);
+    }
+
+    @Test
+    void getActiveSubscriptions_returnsOnlySubscriptionsWithActiveStatus() {
+        Subscription subscription = activeSubscription();
+        when(subscriptionRepository.findAllByStatus(eq("ACTIVE"), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(subscription)));
+
+        var page = subscriptionService.getActiveSubscriptions(org.springframework.data.domain.Pageable.unpaged());
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getTariffCode()).isEqualTo("TARIFF-1");
+        verify(subscriptionRepository).findAllByStatus(eq("ACTIVE"), any());
     }
 
     private Subscription activeSubscription() {

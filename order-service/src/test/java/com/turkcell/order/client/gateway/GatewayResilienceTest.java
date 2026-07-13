@@ -3,20 +3,17 @@ package com.turkcell.order.client.gateway;
 import com.turkcell.order.client.CustomerClientDto;
 import com.turkcell.order.client.CustomerServiceClient;
 import com.turkcell.order.client.ProductCatalogServiceClient;
-import com.turkcell.order.client.SubscriptionClientRequest;
-import com.turkcell.order.client.SubscriptionServiceClient;
 import feign.FeignException;
 import feign.Request;
 import feign.Response;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -31,11 +28,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * order-service saga'sinin en kirilgan noktasi olan Feign zincirine (Bolum 9.2) eklenen circuit
- * breaker + retry wiring'inin GERCEKTEN devrede oldugunu dogrular - resilience4j kutuphanesinin
- * kendi mantigini degil, bu projedeki configs/order-service/application.yml + @CircuitBreaker/@Retry
- * kablolamasinin dogrulugunu test eder. subscription-service kasitli olarak retry'siz (sadece CB)
- * oldugu icin devre acilma senaryosunu retry etkisi olmadan izole sekilde test etmeye elverisli.
+ * order-service'in hala senkron kalan Customer/Catalog dogrulama cagrilarina (Bolum 9.2) eklenen
+ * circuit breaker + retry wiring'inin GERCEKTEN devrede oldugunu dogrular - resilience4j
+ * kutuphanesinin kendi mantigini degil, bu projedeki configs/order-service/application.yml +
+ * @CircuitBreaker/@Retry kablolamasinin dogrulugunu test eder. Subscription dogrulamasi artik
+ * senkron Feign degil (bkz. OrderService.initiateSaga - Kafka choreography), bu yuzden
+ * SubscriptionServiceGateway icin devre acilma senaryosu burada yok.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
@@ -54,23 +52,17 @@ class GatewayResilienceTest {
         registry.add("spring.datasource.password", postgres::getPassword);
     }
 
-    @MockitoBean
+    @MockBean
     private CustomerServiceClient customerServiceClient;
 
-    @MockitoBean
+    @MockBean
     private ProductCatalogServiceClient productCatalogServiceClient;
-
-    @MockitoBean
-    private SubscriptionServiceClient subscriptionServiceClient;
 
     @Autowired
     private CustomerServiceGateway customerServiceGateway;
 
     @Autowired
     private ProductCatalogServiceGateway productCatalogServiceGateway;
-
-    @Autowired
-    private SubscriptionServiceGateway subscriptionServiceGateway;
 
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
@@ -105,31 +97,6 @@ class GatewayResilienceTest {
         // FeignException.NotFound retryExceptions/recordExceptions listelerinde olmadigi icin
         // tek bir denemeyle dogrudan cagirana ulasmali - retry donguleri tetiklenmemeli.
         verify(productCatalogServiceClient, times(1)).getTariff("MISSING");
-    }
-
-    @Test
-    void createSubscription_whenDownstreamRepeatedlyFails_circuitOpensAndShortCircuitsWithoutCallingClient() {
-        when(subscriptionServiceClient.createSubscription(any())).thenThrow(serviceUnavailable());
-
-        // minimumNumberOfCalls=5 (configs/order-service/application.yml default) - bu kadar
-        // basarisiz cagridan sonra failure rate degerlendirilip devre acilir.
-        for (int i = 0; i < 5; i++) {
-            assertThatThrownBy(() -> subscriptionServiceGateway.createSubscription(subscriptionRequest()))
-                    .isInstanceOf(FeignException.class);
-        }
-
-        assertThatThrownBy(() -> subscriptionServiceGateway.createSubscription(subscriptionRequest()))
-                .isInstanceOf(CallNotPermittedException.class);
-
-        // 6. cagri devre acik oldugu icin gercek client'a hic ulasmadi (fail-fast, retry yok).
-        verify(subscriptionServiceClient, times(5)).createSubscription(any());
-    }
-
-    private SubscriptionClientRequest subscriptionRequest() {
-        SubscriptionClientRequest request = new SubscriptionClientRequest();
-        request.setCustomerId(UUID.randomUUID());
-        request.setTariffCode("TARIFF100");
-        return request;
     }
 
     private FeignException.NotFound notFound() {

@@ -65,7 +65,7 @@ class CdrEventServiceTest {
         QuotaResponse quotaResponse = new QuotaResponse();
         quotaResponse.setId(UUID.randomUUID());
         when(quotaService.deduct(eq(subscriptionId), eq("VOICE"), eq(BigDecimal.valueOf(2))))
-                .thenReturn(new QuotaService.QuotaDeductionResult(quotaResponse, null));
+                .thenReturn(new QuotaService.QuotaDeductionResult(quotaResponse, null, null));
 
         CdrEventIngestRequest request = new CdrEventIngestRequest();
         request.setExternalCdrId("CDR-1");
@@ -88,7 +88,7 @@ class CdrEventServiceTest {
         UUID subscriptionId = UUID.randomUUID();
         when(cdrEventRepository.findByExternalCdrId("CDR-2")).thenReturn(Optional.empty());
         when(quotaService.deduct(eq(subscriptionId), eq("SMS"), eq(BigDecimal.ONE)))
-                .thenReturn(new QuotaService.QuotaDeductionResult(new QuotaResponse(), null));
+                .thenReturn(new QuotaService.QuotaDeductionResult(new QuotaResponse(), null, null));
 
         CdrEventIngestRequest request = new CdrEventIngestRequest();
         request.setExternalCdrId("CDR-2");
@@ -108,7 +108,7 @@ class CdrEventServiceTest {
         UUID subscriptionId = UUID.randomUUID();
         when(cdrEventRepository.findByExternalCdrId("CDR-3")).thenReturn(Optional.empty());
         when(quotaService.deduct(eq(subscriptionId), eq("DATA"), any()))
-                .thenReturn(new QuotaService.QuotaDeductionResult(new QuotaResponse(), null));
+                .thenReturn(new QuotaService.QuotaDeductionResult(new QuotaResponse(), null, null));
 
         CdrEventIngestRequest request = new CdrEventIngestRequest();
         request.setExternalCdrId("CDR-3");
@@ -175,7 +175,7 @@ class CdrEventServiceTest {
         QuotaResponse quotaResponse = new QuotaResponse();
         quotaResponse.setId(UUID.randomUUID());
         when(quotaService.deduct(eq(subscriptionId), eq("VOICE"), any()))
-                .thenReturn(new QuotaService.QuotaDeductionResult(quotaResponse, "QuotaThresholdReached"));
+                .thenReturn(new QuotaService.QuotaDeductionResult(quotaResponse, "QuotaThresholdReached", null));
 
         CdrEventIngestRequest request = new CdrEventIngestRequest();
         request.setExternalCdrId("CDR-5");
@@ -188,5 +188,48 @@ class CdrEventServiceTest {
         cdrEventService.ingest(request);
 
         verify(outboxEventService).publish(eq("Quota"), eq(quotaResponse.getId()), eq("QuotaThresholdReached"), any());
+    }
+
+    @Test
+    void ingest_whenDeductionCausesOverage_publishesUsageAggregatedEvent() {
+        UUID subscriptionId = UUID.randomUUID();
+        when(cdrEventRepository.findByExternalCdrId("CDR-6")).thenReturn(Optional.empty());
+
+        QuotaResponse quotaResponse = new QuotaResponse();
+        quotaResponse.setId(UUID.randomUUID());
+        when(quotaService.deduct(eq(subscriptionId), eq("VOICE"), any()))
+                .thenReturn(new QuotaService.QuotaDeductionResult(quotaResponse, "QuotaExceeded", BigDecimal.valueOf(5)));
+
+        CdrEventIngestRequest request = new CdrEventIngestRequest();
+        request.setExternalCdrId("CDR-6");
+        request.setSubscriptionId(subscriptionId);
+        request.setMsisdn("905550000001");
+        request.setCdrType("VOICE");
+        request.setStartTime(Instant.now());
+        request.setDurationSeconds(1200);
+
+        cdrEventService.ingest(request);
+
+        verify(outboxEventService).publish(eq("Quota"), eq(quotaResponse.getId()), eq("UsageAggregated"), any());
+    }
+
+    @Test
+    void ingest_whenDeductionStaysWithinQuota_doesNotPublishUsageAggregatedEvent() {
+        UUID subscriptionId = UUID.randomUUID();
+        when(cdrEventRepository.findByExternalCdrId("CDR-7")).thenReturn(Optional.empty());
+        when(quotaService.deduct(eq(subscriptionId), eq("VOICE"), any()))
+                .thenReturn(new QuotaService.QuotaDeductionResult(new QuotaResponse(), null, null));
+
+        CdrEventIngestRequest request = new CdrEventIngestRequest();
+        request.setExternalCdrId("CDR-7");
+        request.setSubscriptionId(subscriptionId);
+        request.setMsisdn("905550000001");
+        request.setCdrType("VOICE");
+        request.setStartTime(Instant.now());
+        request.setDurationSeconds(60);
+
+        cdrEventService.ingest(request);
+
+        verify(outboxEventService, never()).publish(eq("Quota"), any(), eq("UsageAggregated"), any());
     }
 }
