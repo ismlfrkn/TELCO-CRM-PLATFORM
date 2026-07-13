@@ -53,6 +53,7 @@ class DomainEventConsumerIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.cloud.stream.kafka.binder.brokers", kafka::getBootstrapServers);
+        registry.add("spring.cloud.function.definition", () -> "customerEvents");
         registry.add("spring.cloud.stream.bindings.customerEvents-in-0.destination", () -> "telco.customer.events");
         registry.add("spring.cloud.stream.bindings.customerEvents-in-0.group", () -> "notification-service-test");
         registry.add("spring.cloud.stream.bindings.customerEvents-in-0.content-type", () -> "application/json");

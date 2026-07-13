@@ -1,0 +1,20 @@
+spring:
+  cloud:
+    config:
+      enabled: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+eureka:
+  client:
+    enabled: false
+
+gateway:
+  internal-secret: test-secret
+
+pii:
+  encryption-key: lcFQ5z8JyoQMWHGPH37ZwX96Fat9nYZU73Fi90m/OlM=
