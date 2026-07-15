@@ -16,6 +16,8 @@ import com.turkcell.order.mapper.OrderMapper;
 import com.turkcell.order.repository.OrderItemRepository;
 import com.turkcell.order.repository.OrderRepository;
 import feign.FeignException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -95,6 +97,10 @@ public class OrderService {
 
     public OrderResponse getOrderResponseById(UUID id) {
         return toOrderResponse(getOrderById(id));
+    }
+
+    public Page<OrderResponse> getOrdersByCustomer(UUID customerId, Pageable pageable) {
+        return orderRepository.findAllByCustomerId(customerId, pageable).map(this::toOrderResponse);
     }
 
     /**

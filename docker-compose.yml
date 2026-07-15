@@ -2,6 +2,9 @@ services:
   postgres:
     image: postgres:16
     container_name: telco-postgres
+    # Varsayilan max_connections=100, 10 domain servisinin HikariCP havuzlariyla (bkz.
+    # configs/application.yaml) birlikte dahi asilmasin diye genis bir marjla 200'e cikarildi.
+    command: postgres -c max_connections=200
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -131,6 +134,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "8080:8080"
     depends_on:
@@ -162,6 +168,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/identity_db
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9001:9001"
     depends_on:
@@ -194,6 +203,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9002:9002"
     depends_on:
@@ -228,6 +240,9 @@ services:
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9003:9003"
     depends_on:
@@ -262,6 +277,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9004:9004"
     depends_on:
@@ -294,6 +312,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/subscription_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9005:9005"
     depends_on:
@@ -326,6 +347,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/usage_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9006:9006"
     depends_on:
@@ -358,6 +382,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/billing_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9007:9007"
     depends_on:
@@ -390,6 +417,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9008:9008"
     depends_on:
@@ -422,6 +452,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9009:9009"
     depends_on:
@@ -454,6 +487,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ticket_db
       SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: kafka:29092
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGSTASH_HOST: logstash
+      LOGSTASH_PORT: "5000"
     ports:
       - "9010:9010"
     depends_on:
@@ -475,14 +511,19 @@ services:
       start_period: 30s
 
   # ---------------------------------------------------------------------------
-  # Observability stack (PDF Bolum 7.1/11). NOT: CLAUDE.md Bolum 16 - hicbir serviste henuz
-  # micrometer-tracing/micrometer-registry-prometheus/JSON log shipper yok, yani bu bilesenler
-  # su an veri almadan bos duruyor; servis tarafi instrumente edildiginde devreye girer.
+  # Gozlemlenebilirlik yigini (Zipkin/Prometheus/Grafana/ELK): api-gateway + 10 domain servisinin
+  # hepsi artik gercek trace (Micrometer+Brave), metric (/actuator/prometheus) ve JSON log
+  # (LogstashTcpSocketAppender) uretiyor (bkz. CLAUDE.md Bolum 16, kok pom.xml, configs/application.yaml,
+  # her serviste logback-spring.xml). Yine de "docker compose up" ile varsayilan olarak
+  # BASLAMAZLAR (Elasticsearch tek basina en az ~1GB) - ihtiyac oldugunda
+  # `docker compose --profile observability up -d` ile acilirlar; kapaliyken servisler span/log
+  # gonderimini sessizce arka planda basarisiz sayar, hicbir istegi bloklamaz/cokertmez.
   # ---------------------------------------------------------------------------
 
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: telco-zipkin
+    profiles: ["observability"]
     ports:
       - "9411:9411"
     networks:
@@ -491,6 +532,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: telco-prometheus
+    profiles: ["observability"]
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -502,6 +544,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: telco-grafana
+    profiles: ["observability"]
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
@@ -518,6 +561,7 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     container_name: telco-elasticsearch
+    profiles: ["observability"]
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"
@@ -538,6 +582,7 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:8.15.3
     container_name: telco-logstash
+    profiles: ["observability"]
     volumes:
       - ./observability/logstash/pipeline:/usr/share/logstash/pipeline:ro
     ports:
@@ -554,6 +599,7 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:8.15.3
     container_name: telco-kibana
+    profiles: ["observability"]
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     ports:

@@ -1,0 +1,31 @@
+# Her serviste build context repo koku (bkz. */Dockerfile'daki not: reactor tum pom.xml'leri
+# gormeli). Bu dosya, image icine hic girmeyecek ama olmasa da "docker build" her seferinde
+# Docker daemon'a gonderilecek olan agirliklari (13 servisin target/'i, .git gecmisi) disarida
+# birakip context transferini ve dolayisiyla build suresini kisaltir.
+
+.git/
+.gitignore
+
+**/target/
+
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+*.log
+hs_err_pid*
+replay_pid*
+
+.env
+.env.*
+!.env.example
+
+*.md
+!README.md
+
+observability/
+init-scripts/
+scripts/

@@ -58,6 +58,11 @@
              senkron kalan Customer/Catalog dogrulama cagrilarinda kullaniliyor (bkz.
              order-service client/gateway/*Gateway). -->
         <resilience4j.version>2.3.0</resilience4j.version>
+        <!-- Gozlemlenebilirlik (Bolum 5/10): JSON log -> Logstash appender'i icin. Micrometer'in
+             Prometheus registry'si ve Zipkin/Brave tracing bridge'i spring-boot-dependencies BOM'u
+             tarafindan zaten yonetiliyor, ayrica versiyon belirtmeye gerek yok - sadece bu, Boot'un
+             BOM'unda olmayan tek observability bagimliligi. -->
+        <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     </properties>
 
     <dependencyManagement>
@@ -89,6 +94,28 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Gozlemlenebilirlik (Bolum 5/10) - tum servislerde ortak, docker-compose'daki
+             Prometheus/Zipkin/ELK yigininin gercekten veri alabilmesi icin. management.endpoints
+             expose (prometheus) ve management.tracing/zipkin ayarlari configs/application.yaml'da
+             (config-server uzerinden paylasilan global config). -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.zipkin.reporter2</groupId>
+            <artifactId>zipkin-reporter-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-logback-encoder.version}</version>
         </dependency>
 
         <!-- Test dependency'si tüm modüller tarafından kullanılabilir -->
