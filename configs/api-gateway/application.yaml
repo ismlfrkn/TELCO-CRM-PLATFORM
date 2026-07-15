@@ -5,7 +5,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        # Bu servis-ozel liste, configs/application.yaml'daki paylasilan listeyi EZER (merge etmez) -
+        # prometheus'u da buraya eklemek gerekiyor, aksi halde /actuator/prometheus 404 doner.
+        include: health,info,gateway,prometheus
   endpoint:
     gateway:
       enabled: true

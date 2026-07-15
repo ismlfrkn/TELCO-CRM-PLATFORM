@@ -17,7 +17,7 @@
     <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
         <destination>${LOGSTASH_HOST:-localhost}:${LOGSTASH_PORT:-5900}</destination>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"service":"subscription-service"}</customFields>
+            <customFields>{"service":"api-gateway"}</customFields>
         </encoder>
     </appender>
 

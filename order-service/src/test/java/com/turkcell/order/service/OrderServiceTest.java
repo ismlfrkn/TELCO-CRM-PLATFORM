@@ -22,6 +22,10 @@ import feign.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -181,6 +185,21 @@ class OrderServiceTest {
         when(orderRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.getOrderResponseById(id)).isInstanceOf(OrderNotFoundException.class);
+    }
+
+    @Test
+    void getOrdersByCustomer_returnsPagedOrdersScopedToThatCustomer() {
+        UUID customerId = UUID.randomUUID();
+        Order order = existingOrder(customerId, new BigDecimal("100.00"));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(orderRepository.findAllByCustomerId(customerId, pageable))
+                .thenReturn(new PageImpl<>(List.of(order), pageable, 1));
+        when(orderItemRepository.findAllByOrderId(order.getId())).thenReturn(Collections.emptyList());
+
+        Page<OrderResponse> page = orderService.getOrdersByCustomer(customerId, pageable);
+
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        assertThat(page.getContent().get(0).getId()).isEqualTo(order.getId());
     }
 
     private OrderCreateRequest requestWithTariff(UUID customerId, String tariffCode) {

@@ -21,18 +21,26 @@ public class BillingRunController {
         this.billingRunService = billingRunService;
     }
 
+    /**
+     * FR-21 / spec Bolum 14.2'deki tam kabul kriteri endpoint'i: "Bill-run job manuel tetiklenir"
+     * -> abone/tarife bilgisi cagirandan elle alinmaz, subscription-service + product-catalog-service'ten
+     * kendisi turetilir (bkz. BillingRunService.runAutomatic). Once burasi elle hazirlanmis
+     * InvoiceCreateRequest payload'i bekliyordu (asagidaki /manual'daki davranis) - kabul
+     * senaryosunun literal olarak isaret ettigi path bu oldugu icin gercek hesaplama buraya tasindi.
+     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','BILLING_OPERATOR')")
-    public BillingRunResponse run(@Valid @RequestBody BillingRunRequest request) {
-        return billingRunService.run(request);
+    public BillingRunResponse run(@Valid @RequestBody BillingRunAutoRequest request) {
+        return billingRunService.runAutomatic(request);
     }
 
     /**
-     * FR-21: otomatik mod - abone/tarife bilgisi disaridan verilmez, billing-service
-     * subscription-service + product-catalog-service'ten kendisi turetir (bkz. BillingRunService).
+     * Elle hazirlanmis fatura kalemleriyle (ör. duzeltme/istisna faturasi) tek seferlik bill-run.
+     * FR-21'in otomatik toplu akisinin disinda, admin'in bilinçli olarak override ettigi durum icindir.
      */
-    @PostMapping("/auto")
-    public BillingRunResponse runAutomatic(@Valid @RequestBody BillingRunAutoRequest request) {
-        return billingRunService.runAutomatic(request);
+    @PostMapping("/manual")
+    @PreAuthorize("hasAnyRole('ADMIN','BILLING_OPERATOR')")
+    public BillingRunResponse runManual(@Valid @RequestBody BillingRunRequest request) {
+        return billingRunService.run(request);
     }
 }

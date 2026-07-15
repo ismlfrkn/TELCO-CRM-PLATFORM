@@ -10,7 +10,19 @@
         </encoder>
     </appender>
 
+    <!-- Logstash container sadece observability profili acikken calisir (bkz. CLAUDE.md Bolum
+         15/16). LogstashTcpSocketAppender kapaliyken sessizce arka planda yeniden baglanmayi dener,
+         uygulamayi bloklamaz/cokertmez. LOGSTASH_HOST/PORT host tarafi (mvn spring-boot:run)
+         varsayilanidir; docker-compose her serviste bunu logstash port 5000'e ezer. -->
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${LOGSTASH_HOST:-localhost}:${LOGSTASH_PORT:-5900}</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"notification-service"}</customFields>
+        </encoder>
+    </appender>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="LOGSTASH"/>
     </root>
 </configuration>
