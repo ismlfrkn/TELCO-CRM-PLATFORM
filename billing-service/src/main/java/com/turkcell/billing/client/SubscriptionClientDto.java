@@ -7,6 +7,7 @@ public class SubscriptionClientDto {
     private UUID id;
     private UUID customerId;
     private String tariffCode;
+    private Integer tariffVersion;
     private String status;
 
     public UUID getId() { return id; }
@@ -17,6 +18,9 @@ public class SubscriptionClientDto {
 
     public String getTariffCode() { return tariffCode; }
     public void setTariffCode(String tariffCode) { this.tariffCode = tariffCode; }
+
+    public Integer getTariffVersion() { return tariffVersion; }
+    public void setTariffVersion(Integer tariffVersion) { this.tariffVersion = tariffVersion; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

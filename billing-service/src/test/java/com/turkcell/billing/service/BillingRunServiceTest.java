@@ -5,6 +5,7 @@ import com.turkcell.billing.client.ProductCatalogServiceClient;
 import com.turkcell.billing.client.SubscriptionClientDto;
 import com.turkcell.billing.client.SubscriptionServiceClient;
 import com.turkcell.billing.client.TariffClientDto;
+import com.turkcell.billing.client.TariffVersionClientDto;
 import com.turkcell.billing.dto.request.BillingRunAutoRequest;
 import com.turkcell.billing.dto.request.BillingRunRequest;
 import com.turkcell.billing.dto.request.InvoiceCreateRequest;
@@ -86,6 +87,37 @@ class BillingRunServiceTest {
         assertThat(built.getLines()).hasSize(1);
         assertThat(built.getLines().get(0).getUnitPrice()).isEqualByComparingTo("149.90");
         assertThat(built.getLines().get(0).getDescription()).contains("Standart 100");
+    }
+
+    @Test
+    void runAutomatic_whenSubscriptionPinnedToTariffVersion_usesArchivedVersionNotCurrentTariff() {
+        UUID subscriptionId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        SubscriptionClientDto subscription = subscriptionOf(subscriptionId, customerId, "STD-POSTPAID-100");
+        subscription.setTariffVersion(1);
+        when(subscriptionServiceClient.getActiveSubscriptions(any(Pageable.class)))
+                .thenReturn(pageOf(List.of(subscription), true));
+
+        // Guncel tarife fiyati zamlanmis (150.00) ama abonelik versiyon 1'e pinli (99.90 eski fiyat) -
+        // fatura eski fiyattan kesilmeli, FR-08'in ta kendisi.
+        when(productCatalogServiceClient.getTariff("STD-POSTPAID-100"))
+                .thenReturn(tariffOf("STD-POSTPAID-100", "Standart 100", "150.00", "TRY"));
+        TariffVersionClientDto pinnedVersion = new TariffVersionClientDto();
+        pinnedVersion.setCode("STD-POSTPAID-100");
+        pinnedVersion.setVersion(1);
+        pinnedVersion.setName("Standart 100 (eski)");
+        pinnedVersion.setMonthlyFee(new BigDecimal("99.90"));
+        pinnedVersion.setCurrency("TRY");
+        when(productCatalogServiceClient.getTariffVersion("STD-POSTPAID-100", 1)).thenReturn(pinnedVersion);
+
+        billingRunService.runAutomatic(autoRequest());
+
+        ArgumentCaptor<InvoiceCreateRequest> captor = ArgumentCaptor.forClass(InvoiceCreateRequest.class);
+        verify(invoiceService).createInvoice(captor.capture());
+        InvoiceCreateRequest built = captor.getValue();
+        assertThat(built.getLines().get(0).getUnitPrice()).isEqualByComparingTo("99.90");
+        assertThat(built.getLines().get(0).getDescription()).contains("Standart 100 (eski)");
+        verify(productCatalogServiceClient, never()).getTariff("STD-POSTPAID-100");
     }
 
     @Test
