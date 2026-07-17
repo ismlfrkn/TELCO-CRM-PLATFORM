@@ -1,6 +1,8 @@
 package com.turkcell.subscription.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.turkcell.subscription.client.ProductCatalogServiceClient;
+import com.turkcell.subscription.client.TariffClientDto;
 import com.turkcell.subscription.dto.request.SubscriptionCreateRequest;
 import com.turkcell.subscription.exception.NoAvailableMsisdnException;
 import com.turkcell.subscription.service.OutboxEventService;
@@ -27,13 +29,21 @@ class SagaEventConsumerConfigTest {
 
     private SubscriptionService subscriptionService;
     private OutboxEventService outboxEventService;
+    private ProductCatalogServiceClient productCatalogServiceClient;
     private SagaEventConsumerConfig config;
 
     @BeforeEach
     void setUp() {
         subscriptionService = mock(SubscriptionService.class);
         outboxEventService = mock(OutboxEventService.class);
-        config = new SagaEventConsumerConfig(subscriptionService, outboxEventService, new ObjectMapper());
+        productCatalogServiceClient = mock(ProductCatalogServiceClient.class);
+        config = new SagaEventConsumerConfig(subscriptionService, outboxEventService, new ObjectMapper(),
+                productCatalogServiceClient);
+
+        TariffClientDto tariff = new TariffClientDto();
+        tariff.setCode("TARIFF-STD");
+        tariff.setVersion(3);
+        when(productCatalogServiceClient.getTariff("TARIFF-STD")).thenReturn(tariff);
     }
 
     private String paymentCompletedJson(UUID orderId, UUID customerId, String tariffCode) {
@@ -57,6 +67,21 @@ class SagaEventConsumerConfigTest {
         assertThat(captor.getValue().getOrderId()).isEqualTo(orderId);
         assertThat(captor.getValue().getCustomerId()).isEqualTo(customerId);
         assertThat(captor.getValue().getTariffCode()).isEqualTo("TARIFF-STD");
+        assertThat(captor.getValue().getTariffVersion()).isEqualTo(3);
+    }
+
+    @Test
+    void tariffLookupFailurePublishesSubscriptionActivationFailedEvent() {
+        UUID orderId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        when(productCatalogServiceClient.getTariff("TARIFF-STD"))
+                .thenThrow(new RuntimeException("product-catalog-service unavailable"));
+
+        config.paymentEvents().accept(MessageBuilder.withPayload(
+                paymentCompletedJson(orderId, customerId, "TARIFF-STD")).build());
+
+        verify(subscriptionService, never()).createSubscription(any());
+        verify(outboxEventService).publish(eq("Subscription"), eq(orderId), eq("SubscriptionActivationFailed"), any());
     }
 
     @Test

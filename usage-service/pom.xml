@@ -84,6 +84,14 @@
             <artifactId>spring-cloud-starter-stream-kafka</artifactId>
         </dependency>
 
+        <!-- OpenFeign: SubscriptionActivated tuketildiginde Quota acmak icin product-catalog-service'ten
+             tarifenin minutes/sms/mb dahil degerlerini senkron cekmek gerekiyor (Bolum 8.1 "fiyat/veri
+             snapshot'i senkron olmali" ile ayni gerekce, order-service/billing-service'teki desenle ayni). -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
         <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>

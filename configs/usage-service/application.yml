@@ -22,7 +22,7 @@ spring:
     locations: classpath:db/migration
   cloud:
     function:
-      definition: cdrEvents
+      definition: cdrEvents;subscriptionEvents
     stream:
       kafka:
         binder:
@@ -30,6 +30,10 @@ spring:
       bindings:
         cdrEvents-in-0:
           destination: telco.cdr.events
+          group: usage-service
+          content-type: application/json
+        subscriptionEvents-in-0:
+          destination: telco.subscription.events
           group: usage-service
           content-type: application/json
         usageEvents-out-0:

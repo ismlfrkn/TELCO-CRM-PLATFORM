@@ -1,6 +1,8 @@
 package com.turkcell.productcatalog.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
@@ -37,6 +39,19 @@ public class CacheConfig {
         ObjectMapper objectMapper = JsonMapper.builder()
                 .findAndAddModules()
                 .build();
+        // GenericJackson2JsonRedisSerializer'in NO-ARG constructor'i kendi ObjectMapper'inda
+        // activateDefaultTyping cagirip her degere bir "@class" alani gomer, boylece deserialize
+        // ederken hedef tipi (TariffResponse vb.) bilir. Burada oldugu gibi ObjectMapper'i disaridan
+        // verince bu otomatik olmuyor - tip bilgisi olmadan Jackson her nesneyi duz LinkedHashMap'e
+        // deserialize eder ve @Cacheable'li metotlarda ("(TariffResponse) cachedValue" gibi) cache
+        // HIT aninda ClassCastException firlar (canli testte yakalandi, unit testler cache'i mock'ladigi
+        // icin bunu hic tetiklemiyordu). activateDefaultTyping bunu tip bilgisini JSON'a gomerek cozer.
+        objectMapper.activateDefaultTyping(
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType(Object.class)
+                        .build(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
         RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()

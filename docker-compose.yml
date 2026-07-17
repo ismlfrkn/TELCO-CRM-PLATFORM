@@ -5,6 +5,11 @@ services:
     # Varsayilan max_connections=100, 10 domain servisinin HikariCP havuzlariyla (bkz.
     # configs/application.yaml) birlikte dahi asilmasin diye genis bir marjla 200'e cikarildi.
     command: postgres -c max_connections=200
+    # Bellek tavani: WSL2/Docker Desktop varsayilan olarak host RAM'inin sadece %50'sini kullanir
+    # (bkz. CLAUDE.md Bolum 15) ve JVM'ler sinirsiz -Xmx ile bu havuzu kolayca tasirip motoru
+    # tikayabiliyordu. Her serviste sabit bir mem_limit + (JVM'lerde) -Xmx tavani, toplam
+    # kullanimin ongorulebilir kalmasini saglar.
+    mem_limit: 512m
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -26,6 +31,7 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     container_name: telco-pgadmin
+    mem_limit: 384m
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -39,9 +45,11 @@ services:
   kafka:
     image: apache/kafka:3.7.0
     container_name: telco-kafka
+    mem_limit: 640m
     ports:
       - "9092:9092"
     environment:
+      KAFKA_HEAP_OPTS: "-Xms384m -Xmx384m"
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -66,6 +74,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: telco-redis
+    mem_limit: 192m
     ports:
       - "6379:6379"
     networks:
@@ -86,6 +95,9 @@ services:
       context: .
       dockerfile: discovery-server/Dockerfile
     container_name: telco-discovery-server
+    mem_limit: 384m
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
     ports:
       - "8761:8761"
     networks:
@@ -102,11 +114,13 @@ services:
       context: .
       dockerfile: config-server/Dockerfile
     container_name: telco-config-server
+    mem_limit: 384m
     volumes:
       # application.yaml'daki native search-location "file:../configs,file:../configs/{application}"
       # WORKDIR /app/config-server'a gore bu mount'u cozer (bkz. config-server/Dockerfile).
       - ./configs:/app/configs:ro
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     ports:
       - "8888:8888"
@@ -127,9 +141,11 @@ services:
       context: .
       dockerfile: api-gateway/Dockerfile
     container_name: telco-api-gateway
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATA_REDIS_HOST: redis
@@ -160,9 +176,11 @@ services:
       context: .
       dockerfile: identity-service/Dockerfile
     container_name: telco-identity-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/identity_db
@@ -196,9 +214,11 @@ services:
       context: .
       dockerfile: customer-service/Dockerfile
     container_name: telco-customer-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_db
@@ -231,9 +251,11 @@ services:
       context: .
       dockerfile: product-catalog-service/Dockerfile
     container_name: telco-product-catalog-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_catalog_db
@@ -270,9 +292,11 @@ services:
       context: .
       dockerfile: order-service/Dockerfile
     container_name: telco-order-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
@@ -305,9 +329,11 @@ services:
       context: .
       dockerfile: subscription-service/Dockerfile
     container_name: telco-subscription-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/subscription_db
@@ -340,9 +366,11 @@ services:
       context: .
       dockerfile: usage-service/Dockerfile
     container_name: telco-usage-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/usage_db
@@ -375,9 +403,12 @@ services:
       context: .
       dockerfile: billing-service/Dockerfile
     container_name: telco-billing-service
+    mem_limit: 512m
     env_file:
       - .env
     environment:
+      # PDFBox fatura uretimi diger servislere gore biraz daha fazla heap ister.
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx352m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/billing_db
@@ -410,9 +441,11 @@ services:
       context: .
       dockerfile: payment-service/Dockerfile
     container_name: telco-payment-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
@@ -445,9 +478,11 @@ services:
       context: .
       dockerfile: notification-service/Dockerfile
     container_name: telco-notification-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
@@ -480,9 +515,11 @@ services:
       context: .
       dockerfile: ticket-service/Dockerfile
     container_name: telco-ticket-service
+    mem_limit: 480m
     env_file:
       - .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx320m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ticket_db
@@ -524,8 +561,15 @@ services:
     image: openzipkin/zipkin:latest
     container_name: telco-zipkin
     profiles: ["observability"]
+    mem_limit: 384m
+    environment:
+      JAVA_OPTS: "-Xms64m -Xmx256m"
     ports:
-      - "9411:9411"
+      # Bkz. logstash/kibana servislerindeki ayni not: Windows'un Hyper-V icin dinamik olarak
+      # ayirdigi port araliklari (netsh interface ipv4 show excludedportrange protocol=tcp) 9411'i
+      # de kapsayabiliyor; container ici port (Zipkin'in kendi varsayilani) degismedi, sadece host
+      # mapping'i farkli.
+      - "19411:9411"
     networks:
       - telco-net
 
@@ -533,6 +577,7 @@ services:
     image: prom/prometheus:latest
     container_name: telco-prometheus
     profiles: ["observability"]
+    mem_limit: 384m
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -545,6 +590,7 @@ services:
     image: grafana/grafana:latest
     container_name: telco-grafana
     profiles: ["observability"]
+    mem_limit: 256m
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
@@ -562,6 +608,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     container_name: telco-elasticsearch
     profiles: ["observability"]
+    mem_limit: 1152m
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"
@@ -583,6 +630,9 @@ services:
     image: docker.elastic.co/logstash/logstash:8.15.3
     container_name: telco-logstash
     profiles: ["observability"]
+    mem_limit: 576m
+    environment:
+      LS_JAVA_OPTS: "-Xms256m -Xmx320m"
     volumes:
       - ./observability/logstash/pipeline:/usr/share/logstash/pipeline:ro
     ports:
@@ -600,8 +650,10 @@ services:
     image: docker.elastic.co/kibana/kibana:8.15.3
     container_name: telco-kibana
     profiles: ["observability"]
+    mem_limit: 640m
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      NODE_OPTIONS: "--max-old-space-size=448"
     ports:
       # Bkz. logstash servisindeki not: Windows'un Hyper-V icin dinamik olarak ayirdigi port
       # araliklari zamanla kayabiliyor (5601 de tekrarlayan sekilde catisti); daha yuksek, bu

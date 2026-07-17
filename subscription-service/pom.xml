@@ -78,6 +78,14 @@
             <artifactId>spring-cloud-starter-config</artifactId>
         </dependency>
 
+        <!-- OpenFeign: PaymentCompleted tuketildiginde FR-08 icin subscription'a hangi tarife
+             VERSIYONUNA baglandigini pinlemek amaciyla product-catalog-service'ten guncel versiyon
+             numarasi senkron cekilir (order-service/billing-service/usage-service'teki desenle ayni). -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
         <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>
