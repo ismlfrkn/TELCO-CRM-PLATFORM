@@ -1,0 +1,114 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: telco-crm
+
+resources:
+  - namespace.yaml
+  - infra/postgres.yaml
+  - infra/redis.yaml
+  - infra/kafka.yaml
+  - platform/discovery-server.yaml
+  - platform/config-server.yaml
+  - platform/api-gateway.yaml
+  - services/identity-service.yaml
+  - services/customer-service.yaml
+  - services/product-catalog-service.yaml
+  - services/order-service.yaml
+  - services/subscription-service.yaml
+  - services/usage-service.yaml
+  - services/billing-service.yaml
+  - services/payment-service.yaml
+  - services/notification-service.yaml
+  - services/ticket-service.yaml
+
+# ConfigMap isimleri sabit tutuluyor (hash suffix yok) cunku config-server.yaml bunlari
+# projected volume icinde adla referans aliyor. Bedeli: config icerigi degisince Deployment
+# otomatik rollout olmaz, "kubectl rollout restart deployment/config-server -n telco-crm"
+# elle tetiklenmeli - lab kapsaminda kabul edilebilir bir basitlestirme.
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: postgres-init-scripts
+    files:
+      - ../../init-scripts/01-create-databases.sql
+
+  - name: cfg-root
+    files:
+      - ../../configs/application.yaml
+
+  - name: cfg-api-gateway
+    files:
+      - ../../configs/api-gateway/application.yaml
+
+  - name: cfg-billing-service
+    files:
+      - ../../configs/billing-service/application.yml
+
+  - name: cfg-customer-service
+    files:
+      - ../../configs/customer-service/application.yaml
+      - ../../configs/customer-service/application-dev.yaml
+      - ../../configs/customer-service/application-prod.yaml
+      - ../../configs/customer-service/application-test.yaml
+
+  - name: cfg-identity-service
+    files:
+      - ../../configs/identity-service/application.yml
+      - ../../configs/identity-service/application-dev.yml
+      - ../../configs/identity-service/application-prod.yml
+      - ../../configs/identity-service/application-test.yml
+
+  - name: cfg-notification-service
+    files:
+      - ../../configs/notification-service/application.yml
+
+  - name: cfg-order-service
+    files:
+      - ../../configs/order-service/application.yml
+
+  - name: cfg-payment-service
+    files:
+      - ../../configs/payment-service/application.yml
+
+  - name: cfg-product-catalog-service
+    files:
+      - ../../configs/product-catalog-service/application.yml
+      - ../../configs/product-catalog-service/application-dev.yaml
+      - ../../configs/product-catalog-service/application-prod.yaml
+      - ../../configs/product-catalog-service/application-test.yaml
+
+  - name: cfg-subscription-service
+    files:
+      - ../../configs/subscription-service/application.yml
+
+  - name: cfg-ticket-service
+    files:
+      - ../../configs/ticket-service/application.yml
+
+  - name: cfg-usage-service
+    files:
+      - ../../configs/usage-service/application.yml
+
+# Deployment'lardaki "image:" alanlari mantiksal isimler (telco-<servis>:latest) - burada gercek
+# registry/repo/tag'e ceviriliyor. newName, .github/workflows/ci-cd.yml'deki DOCKER_USERNAME
+# secret'iyla ayni Docker Hub hesabi olmali (dogrulandi: "docker pull codebynurgul/telco-discovery-server:latest"
+# basarili). newTag "latest" sabit tutuluyor: ci-cd.yml'deki "docker" job'u her push'ta hem
+# ":latest" hem ":<sha>" etiketiyle push ediyor, "k8s-deploy-check" job'u "docker" job'undan SONRA
+# calistigi icin (needs: docker) ":latest" o an itibariyle her zaman az once push edilen image'dir -
+# ayrica bir "kustomize edit set image" adimina gerek yok.
+images:
+  - { name: telco-discovery-server, newName: codebynurgul/telco-discovery-server, newTag: latest }
+  - { name: telco-config-server, newName: codebynurgul/telco-config-server, newTag: latest }
+  - { name: telco-api-gateway, newName: codebynurgul/telco-api-gateway, newTag: latest }
+  - { name: telco-identity-service, newName: codebynurgul/telco-identity-service, newTag: latest }
+  - { name: telco-customer-service, newName: codebynurgul/telco-customer-service, newTag: latest }
+  - { name: telco-product-catalog-service, newName: codebynurgul/telco-product-catalog-service, newTag: latest }
+  - { name: telco-order-service, newName: codebynurgul/telco-order-service, newTag: latest }
+  - { name: telco-subscription-service, newName: codebynurgul/telco-subscription-service, newTag: latest }
+  - { name: telco-usage-service, newName: codebynurgul/telco-usage-service, newTag: latest }
+  - { name: telco-billing-service, newName: codebynurgul/telco-billing-service, newTag: latest }
+  - { name: telco-payment-service, newName: codebynurgul/telco-payment-service, newTag: latest }
+  - { name: telco-notification-service, newName: codebynurgul/telco-notification-service, newTag: latest }
+  - { name: telco-ticket-service, newName: codebynurgul/telco-ticket-service, newTag: latest }

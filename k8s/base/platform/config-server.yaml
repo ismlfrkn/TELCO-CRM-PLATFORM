@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: telco-crm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      initContainers:
+        - name: wait-for-discovery
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until wget -q -O- http://discovery-server:8761/actuator/health 2>/dev/null | grep -q '"status":"UP"'; do
+                echo "waiting for discovery-server..."; sleep 3
+              done
+      containers:
+        - name: config-server
+          image: telco-config-server:latest
+          ports:
+            - containerPort: 8888
+          env:
+            - { name: JAVA_TOOL_OPTIONS, value: "-Xms64m -Xmx256m" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, value: "http://discovery-server:8761/eureka/" }
+          # config-server/src/main/resources/application.yaml: native search-locations
+          # "file:../configs,file:../configs/{application}" -> WORKDIR /app/config-server'a gore
+          # /app/configs'e cozulur (bkz. config-server/Dockerfile yorumu).
+          volumeMounts:
+            - name: app-configs
+              mountPath: /app/configs
+          resources:
+            requests: { memory: "256Mi", cpu: "100m" }
+            limits: { memory: "384Mi", cpu: "400m" }
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8888 }
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8888 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8888 }
+            periodSeconds: 15
+      volumes:
+        # configs/ altindaki her alt klasor ayri bir ConfigMap'ten (bkz. kustomization.yaml
+        # configMapGenerator listesi) projected volume ile tek bir agac halinde birlestirilir -
+        # native config-server'in bekledigi orijinal dizin yapisini birebir yeniden olusturur.
+        - name: app-configs
+          projected:
+            sources:
+              - configMap:
+                  name: cfg-root
+                  items:
+                    - { key: application.yaml, path: application.yaml }
+              - configMap:
+                  name: cfg-api-gateway
+                  items:
+                    - { key: application.yaml, path: api-gateway/application.yaml }
+              - configMap:
+                  name: cfg-billing-service
+                  items:
+                    - { key: application.yml, path: billing-service/application.yml }
+              - configMap:
+                  name: cfg-customer-service
+                  items:
+                    - { key: application.yaml, path: customer-service/application.yaml }
+                    - { key: application-dev.yaml, path: customer-service/application-dev.yaml }
+                    - { key: application-prod.yaml, path: customer-service/application-prod.yaml }
+                    - { key: application-test.yaml, path: customer-service/application-test.yaml }
+              - configMap:
+                  name: cfg-identity-service
+                  items:
+                    - { key: application.yml, path: identity-service/application.yml }
+                    - { key: application-dev.yml, path: identity-service/application-dev.yml }
+                    - { key: application-prod.yml, path: identity-service/application-prod.yml }
+                    - { key: application-test.yml, path: identity-service/application-test.yml }
+              - configMap:
+                  name: cfg-notification-service
+                  items:
+                    - { key: application.yml, path: notification-service/application.yml }
+              - configMap:
+                  name: cfg-order-service
+                  items:
+                    - { key: application.yml, path: order-service/application.yml }
+              - configMap:
+                  name: cfg-payment-service
+                  items:
+                    - { key: application.yml, path: payment-service/application.yml }
+              - configMap:
+                  name: cfg-product-catalog-service
+                  items:
+                    - { key: application.yml, path: product-catalog-service/application.yml }
+                    - { key: application-dev.yaml, path: product-catalog-service/application-dev.yaml }
+                    - { key: application-prod.yaml, path: product-catalog-service/application-prod.yaml }
+                    - { key: application-test.yaml, path: product-catalog-service/application-test.yaml }
+              - configMap:
+                  name: cfg-subscription-service
+                  items:
+                    - { key: application.yml, path: subscription-service/application.yml }
+              - configMap:
+                  name: cfg-ticket-service
+                  items:
+                    - { key: application.yml, path: ticket-service/application.yml }
+              - configMap:
+                  name: cfg-usage-service
+                  items:
+                    - { key: application.yml, path: usage-service/application.yml }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server
+  namespace: telco-crm
+spec:
+  selector:
+    app: config-server
+  ports:
+    - port: 8888
+      targetPort: 8888

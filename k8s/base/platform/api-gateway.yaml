@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: telco-crm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      initContainers:
+        - name: wait-for-config-server
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until wget -q -O- http://discovery-server:8761/actuator/health 2>/dev/null | grep -q '"status":"UP"'; do
+                echo "waiting for discovery-server..."; sleep 3
+              done
+              until wget -q -O- http://config-server:8888/actuator/health 2>/dev/null | grep -q '"status":"UP"'; do
+                echo "waiting for config-server..."; sleep 3
+              done
+      containers:
+        - name: api-gateway
+          image: telco-api-gateway:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef: { name: telco-secrets }
+          env:
+            - { name: JAVA_TOOL_OPTIONS, value: "-Xms96m -Xmx320m" }
+            - { name: SPRING_CONFIG_IMPORT, value: "optional:configserver:http://config-server:8888" }
+            - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, value: "http://discovery-server:8761/eureka/" }
+            - { name: SPRING_DATA_REDIS_HOST, value: "redis" }
+            - { name: SPRING_DATA_REDIS_PORT, value: "6379" }
+          resources:
+            requests: { memory: "320Mi", cpu: "150m" }
+            limits: { memory: "480Mi", cpu: "500m" }
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: telco-crm
+spec:
+  # NodePort, ClusterIP erisimini de kapsar - "kubectl port-forward svc/api-gateway 8080:8080"
+  # ve (istenirse) "minikube service api-gateway" ikisi de bu tek Service uzerinden calisir.
+  type: NodePort
+  selector:
+    app: api-gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
