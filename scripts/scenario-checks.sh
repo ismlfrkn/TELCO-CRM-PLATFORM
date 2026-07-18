@@ -26,6 +26,29 @@ ok()   { echo "   OK - $1"; }
 warn() { echo "   UYARI - $1"; }
 fail() { echo "   HATA - $1"; }
 
+random_valid_tckn() {
+    # IdentityNumberValidator.isValidTckn ile ayni checksum algoritmasi - her calistirmada
+    # gecerli AMA farkli bir TCKN uretir (sabit deger kullanmak, kalici bir DB'ye karsi ikinci
+    # kez calistirinca DuplicateIdentityNumberException/409 ile patlardi).
+    awk -v seed="$RANDOM$RANDOM" 'BEGIN {
+        srand(seed);
+        d[0] = int(rand()*8)+1;
+        for (i=1; i<9; i++) d[i] = int(rand()*10);
+        oddSum = d[0]+d[2]+d[4]+d[6]+d[8];
+        evenSum = d[1]+d[3]+d[5]+d[7];
+        d9 = ((oddSum*7) - evenSum) % 10;
+        if (d9 < 0) d9 += 10;
+        sum10 = 0;
+        for (i=0; i<9; i++) sum10 += d[i];
+        sum10 += d9;
+        d10 = sum10 % 10;
+        out = "";
+        for (i=0; i<9; i++) out = out d[i];
+        out = out d9 d10;
+        print out;
+    }'
+}
+
 api() {
     # api METHOD PATH [BODY_JSON] [EXTRA_HEADER]
     local method="$1" path="$2" body="${3:-}" extra_header="${4:-}"
@@ -47,7 +70,7 @@ ok "JWT alindi"
 # =============================================================================
 step "SENARYO 1: Yeni Abone Onboarding"
 
-IDENTITY_NUMBER="10000000146"  # gecerli TCKN checksum'i (IdentityNumberValidator.isValidTckn)
+IDENTITY_NUMBER=$(random_valid_tckn)
 EMAIL_SUFFIX=$(date +%H%M%S)
 
 CUSTOMER=$(api POST /api/v1/customers "$(jq -n --arg id "$IDENTITY_NUMBER" --arg email "ayse.yilmaz.$EMAIL_SUFFIX@example.com" '{

@@ -30,6 +30,23 @@ function Write-Ok($text) { Write-Host "   OK - $text" -ForegroundColor Green }
 function Write-Warn($text) { Write-Host "   UYARI - $text" -ForegroundColor Yellow }
 function Write-Fail($text) { Write-Host "   HATA - $text" -ForegroundColor Red }
 
+function Get-RandomValidTckn {
+    # IdentityNumberValidator.isValidTckn ile ayni checksum algoritmasi - her calistirmada
+    # gecerli AMA farkli bir TCKN uretir (sabit deger kullanmak, kalici bir DB'ye karsi ikinci
+    # kez calistirinca DuplicateIdentityNumberException/409 ile patlardi).
+    $digits = New-Object int[] 11
+    $digits[0] = Get-Random -Minimum 1 -Maximum 9
+    for ($i = 1; $i -lt 9; $i++) { $digits[$i] = Get-Random -Minimum 0 -Maximum 9 }
+    $oddSum = $digits[0] + $digits[2] + $digits[4] + $digits[6] + $digits[8]
+    $evenSum = $digits[1] + $digits[3] + $digits[5] + $digits[7]
+    $digits[9] = (($oddSum * 7) - $evenSum) % 10
+    if ($digits[9] -lt 0) { $digits[9] += 10 }
+    $sumFirst10 = 0
+    for ($i = 0; $i -lt 10; $i++) { $sumFirst10 += $digits[$i] }
+    $digits[10] = $sumFirst10 % 10
+    return -join $digits
+}
+
 function Get-AccessToken {
     $body = @{ usernameOrEmail = $Username; password = $Password } | ConvertTo-Json
     $response = Invoke-RestMethod -Method Post -Uri "$GatewayUrl/api/v1/auth/login" `
@@ -63,7 +80,7 @@ Write-Ok "JWT alindi"
 # =============================================================================
 Write-Step "SENARYO 1: Yeni Abone Onboarding"
 
-$identityNumber = "10000000146"  # gecerli TCKN checksum'i (IdentityNumberValidator.isValidTckn)
+$identityNumber = Get-RandomValidTckn
 $customer = Invoke-Checked "Musteri kaydi (POST /customers)" {
     $body = @{
         type           = "INDIVIDUAL"
@@ -127,7 +144,10 @@ $subscription = $null
 for ($i = 1; $i -le 20; $i++) {
     Start-Sleep -Seconds 4
     $subs = Invoke-RestMethod -Method Get -Uri "$GatewayUrl/api/v1/subscriptions?customerId=$customerId" -Headers $headers
-    $items = if ($subs.content) { $subs.content } else { $subs }
+    # @() ile array context'i zorluyoruz: tek elemanli bir array, "if" ifadesinin ciktisi olarak
+    # dogrudan atanirsa PowerShell bunu scalar'a unwrap eder ve .Count kaybolur (gercek Kind
+    # cluster'inda ACTIVE subscription'i hep "bulunamadi" gostermesine sebep olan bug buydu).
+    $items = @(if ($subs.content) { $subs.content } else { $subs })
     if ($items -and $items.Count -gt 0) {
         $subscription = $items[0]
         if ($subscription.status -eq "ACTIVE") { break }
@@ -162,7 +182,7 @@ $invoice = $null
 for ($i = 1; $i -le 20; $i++) {
     Start-Sleep -Seconds 4
     $invoices = Invoke-RestMethod -Method Get -Uri "$GatewayUrl/api/v1/invoices?customerId=$customerId" -Headers $headers
-    $items = if ($invoices.content) { $invoices.content } else { $invoices }
+    $items = @(if ($invoices.content) { $invoices.content } else { $invoices })
     if ($items -and $items.Count -gt 0) {
         $invoice = $items[0]
         if ($invoice.status -eq "PAID") { break }
