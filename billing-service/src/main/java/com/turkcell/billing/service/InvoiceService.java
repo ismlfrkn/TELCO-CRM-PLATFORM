@@ -167,16 +167,21 @@ public class InvoiceService {
 
     /**
      * tariffCode bos birakilirsa asim hesaplamasi tamamen atlanir (geriye donuk uyumlu - mevcut
-     * davranis degismez). Doluysa, ayni abonelik+donem icin henuz faturalanmamis (invoiceId NULL)
-     * usage_aggregates satirlari doner - period alanlari Invoice'in donemiyle birebir eslesmeli
-     * (usage-service'in Quota donemiyle bill-run'in fatura donemi ayni varsayilir).
+     * davranis degismez). Doluysa, bu abonelik icin henuz faturalanmamis (invoiceId NULL) TUM
+     * usage_aggregates satirlari doner. Onceden bu sorgu ayrica request'in periodStart/periodEnd'iyle
+     * birebir eslesme de istiyordu - ama BillingRunService.buildInvoiceRequest'in otomatik modda TUM
+     * aboneliklere ayni (cagirandan gelen) periyodu atadigi, her aboneligin kendi Quota doneminin ise
+     * (usage-service'te aktivasyon tarihine gore) tamamen bagimsiz ilerledigi goz onune alindiginda bu
+     * birebir eslesme pratikte hemen hic tutmuyor ve asim sessizce (hatasiz/logsuz) hic faturalanmadan
+     * kalıyordu - gercek bir Kind cluster'inda canli test edilirken bulundu. invoiceId IS NULL zaten
+     * tek basina dogru "cift faturalama olmasin" korumasi (bkz. UsageAggregate javadoc'u), donem
+     * eslesmesi ekstra bir deger katmiyordu.
      */
     private List<UsageAggregate> findUnclaimedOverage(InvoiceCreateRequest request) {
         if (request.getTariffCode() == null) {
             return List.of();
         }
-        return usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
-                request.getSubscriptionId(), request.getPeriodStart(), request.getPeriodEnd());
+        return usageAggregateRepository.findBySubscriptionIdAndInvoiceIdIsNull(request.getSubscriptionId());
     }
 
     /**

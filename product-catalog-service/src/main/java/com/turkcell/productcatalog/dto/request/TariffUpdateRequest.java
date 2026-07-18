@@ -44,6 +44,13 @@ public class TariffUpdateRequest {
     @Size(min = 3, max = 3, message = "Currency must be 3 characters")
     private String currency;
 
+    // tariffs.effective_from DB'de NOT NULL (bkz. V1__init_schema.sql) ve Tariff.@PrePersist bunu
+    // sadece INSERT'te (CREATE) varsayilan olarak doldurur - bu PUT (tam degistirme) TariffService
+    // tarafinda kosulsuz set edildigi icin (bkz. TariffService.updateTariff), bu alan atlanirsa
+    // mevcut deger null'a ezilip DataIntegrityViolationException/500 ile pattliyordu. Diger tum
+    // zorunlu alanlarla (name/type/monthlyFee/status) tutarli olacak sekilde @NotNull yapildi -
+    // artik atlanirsa 500 yerine duzgun bir 400 doner.
+    @NotNull(message = "Effective from date cannot be null")
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
 

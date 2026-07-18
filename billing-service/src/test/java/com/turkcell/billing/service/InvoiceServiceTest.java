@@ -68,7 +68,7 @@ class InvoiceServiceTest {
         });
         when(invoiceLineRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
         when(invoiceLineRepository.findAllByInvoiceId(any())).thenReturn(List.of());
-        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(any(), any(), any()))
+        when(usageAggregateRepository.findBySubscriptionIdAndInvoiceIdIsNull(any()))
                 .thenReturn(List.of());
     }
 
@@ -164,8 +164,8 @@ class InvoiceServiceTest {
         LocalDate periodStart = LocalDate.of(2026, 7, 1);
         LocalDate periodEnd = LocalDate.of(2026, 7, 31);
         UsageAggregate overage = usageAggregateOf(subscriptionId, "VOICE", "100", periodStart, periodEnd);
-        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
-                subscriptionId, periodStart, periodEnd)).thenReturn(List.of(overage));
+        when(usageAggregateRepository.findBySubscriptionIdAndInvoiceIdIsNull(subscriptionId))
+                .thenReturn(List.of(overage));
 
         TariffClientDto tariff = new TariffClientDto();
         tariff.setCode("STD-POSTPAID-100");
@@ -201,8 +201,8 @@ class InvoiceServiceTest {
         LocalDate periodEnd = LocalDate.of(2026, 7, 31);
         UsageAggregate first = usageAggregateOf(subscriptionId, "VOICE", "60", periodStart, periodEnd);
         UsageAggregate second = usageAggregateOf(subscriptionId, "VOICE", "40", periodStart, periodEnd);
-        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
-                subscriptionId, periodStart, periodEnd)).thenReturn(List.of(first, second));
+        when(usageAggregateRepository.findBySubscriptionIdAndInvoiceIdIsNull(subscriptionId))
+                .thenReturn(List.of(first, second));
 
         TariffClientDto tariff = new TariffClientDto();
         tariff.setOverageRatePerMinute(new BigDecimal("1.00"));
@@ -229,8 +229,8 @@ class InvoiceServiceTest {
         LocalDate periodStart = LocalDate.of(2026, 7, 1);
         LocalDate periodEnd = LocalDate.of(2026, 7, 31);
         UsageAggregate overage = usageAggregateOf(subscriptionId, "VOICE", "100", periodStart, periodEnd);
-        when(usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
-                subscriptionId, periodStart, periodEnd)).thenReturn(List.of(overage));
+        when(usageAggregateRepository.findBySubscriptionIdAndInvoiceIdIsNull(subscriptionId))
+                .thenReturn(List.of(overage));
 
         TariffClientDto tariff = new TariffClientDto(); // overageRatePerMinute null/0 varsayilan
         when(productCatalogServiceClient.getTariff("STD-POSTPAID-100")).thenReturn(tariff);
