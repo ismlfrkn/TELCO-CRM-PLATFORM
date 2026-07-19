@@ -20,11 +20,6 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Mockito ile PESSIMISTIC_WRITE'in gercekten satiri kilitledigini kanitlayamayiz. Bu test gercek bir
- * Postgres'e karsi, ayni aboneligin kotasina ayni anda cok sayida VOICE CDR dususu uygulanip hicbir
- * dususun "kaybolmadigini" (lost update olmadigini) dogrular.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class QuotaConcurrencyTest {

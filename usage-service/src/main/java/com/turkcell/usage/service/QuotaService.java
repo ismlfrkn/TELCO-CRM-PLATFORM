@@ -24,7 +24,7 @@ public class QuotaService {
 
     private static final String EVENT_QUOTA_EXCEEDED = "QuotaExceeded";
     private static final String EVENT_QUOTA_THRESHOLD_REACHED = "QuotaThresholdReached";
-    private static final double THRESHOLD_RATIO = 0.8; // FR-19: %80 kullanimda uyari
+    private static final double THRESHOLD_RATIO = 0.8;
 
     private final QuotaRepository quotaRepository;
     private final QuotaMapper quotaMapper;
@@ -64,11 +64,6 @@ public class QuotaService {
                 .orElseThrow(() -> new QuotaNotFoundException("Quota not found for subscription: " + subscriptionId));
     }
 
-    /**
-     * FOR UPDATE ile kilitlenen tek satiri gunceller: ayni aboneligin kotasina eszamanli birden
-     * fazla CDR dusme istegi gelirse (ornegin biri bitmeden digeri baslayan iki cagri), her istek
-     * sirayla islenir - hicbiri "eski" remaining degeri uzerinden yazip digerinin dususunu kaybetmez.
-     */
     @Transactional
     public QuotaDeductionResult deduct(UUID subscriptionId, String cdrType, BigDecimal quantity) {
         Quota quota = quotaRepository.findBySubscriptionIdForUpdate(subscriptionId)
@@ -107,12 +102,6 @@ public class QuotaService {
         return new QuotaDeductionResult(quotaMapper.toResponse(quota), thresholdEvent, overageQuantity);
     }
 
-    /**
-     * FR-20: asim kullanimlari billing'e agregate edilir. Bu CDR dususu kotayi negatife
-     * dusurduyse (ya da zaten negatifken devam ettiyse), dususun asima denk gelen kismini
-     * dondurur - null donerse bu CDR tamamen kota icinde kalmis demektir, UsageAggregated
-     * yayinlanmaz.
-     */
     private BigDecimal computeOverageQuantity(int amount, int remainingBefore, int remainingAfter) {
         if (remainingAfter >= 0) {
             return null;
@@ -121,10 +110,6 @@ public class QuotaService {
         return overage > 0 ? BigDecimal.valueOf(overage) : null;
     }
 
-    /**
-     * Kenar tetiklemeli (edge-triggered): esik zaten asilmisken gelen sonraki CDR'larda event
-     * TEKRAR uretilmez, sadece esigin "yeni gecildigi" CDR'da uretilir.
-     */
     private String detectThresholdEvent(int included, int remainingBefore, int remainingAfter) {
         if (included <= 0) {
             return null;

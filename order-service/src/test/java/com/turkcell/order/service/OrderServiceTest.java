@@ -22,6 +22,10 @@ import feign.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -38,15 +42,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/**
- * executeSaga'nin senkron Payment/Subscription cagrilarini kapsayan eski senaryolar artik burada
- * degil - saga'nin devami (PaymentCompleted/Failed, SubscriptionActivated/Failed tuketimi) artik
- * SagaEventConsumerConfigTest'te test ediliyor. Burada sadece OrderService'in kendi sorumlulugu olan
- * ILK adim (siparis olustur + OrderCreated yayinla) ve manuel iptal/sorgu davranislari kaliyor.
- * Musteri/katalog dogrulamasi CustomerServiceGateway/ProductCatalogServiceGateway (Resilience4j
- * sarmalayicilari) uzerinden yapiliyor - Payment/SubscriptionGateway artik kullanilmiyor (bkz.
- * OrderService, o cagrilar Kafka choreography'e tasindi).
- */
 class OrderServiceTest {
 
     private OrderRepository orderRepository;
@@ -101,7 +96,7 @@ class OrderServiceTest {
         verify(outboxEventService).publish(eq("Order"), eq(order.getId()), eq("OrderCreated"), any());
         verify(orderPersistenceService).markAwaitingPayment(order.getId());
         verify(idempotencyKeyService).complete(eq("idem-key-1"), any(), eq(201));
-        // Odeme/abonelik artik senkron tetiklenmiyor - bu asamada sadece OrderCreated yayinlanmis olmali.
+
         verify(outboxEventService, never()).publish(eq("Order"), any(), eq("OrderConfirmed"), any());
         verify(outboxEventService, never()).publish(eq("Order"), any(), eq("OrderCancelled"), any());
     }
@@ -181,6 +176,21 @@ class OrderServiceTest {
         when(orderRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.getOrderResponseById(id)).isInstanceOf(OrderNotFoundException.class);
+    }
+
+    @Test
+    void getOrdersByCustomer_returnsPagedOrdersScopedToThatCustomer() {
+        UUID customerId = UUID.randomUUID();
+        Order order = existingOrder(customerId, new BigDecimal("100.00"));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(orderRepository.findAllByCustomerId(customerId, pageable))
+                .thenReturn(new PageImpl<>(List.of(order), pageable, 1));
+        when(orderItemRepository.findAllByOrderId(order.getId())).thenReturn(Collections.emptyList());
+
+        Page<OrderResponse> page = orderService.getOrdersByCustomer(customerId, pageable);
+
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        assertThat(page.getContent().get(0).getId()).isEqualTo(order.getId());
     }
 
     private OrderCreateRequest requestWithTariff(UUID customerId, String tariffCode) {

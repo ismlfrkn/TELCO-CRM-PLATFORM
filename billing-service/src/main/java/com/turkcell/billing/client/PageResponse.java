@@ -2,11 +2,6 @@ package com.turkcell.billing.client;
 
 import java.util.List;
 
-/**
- * Spring Data Page<T>'nin varsayilan JSON serilestirmesini (content/last/totalPages alanlari)
- * Feign uzerinden tuketmek icin - Page arayuzunun kendisi Jackson ile dogrudan deserialize
- * edilemez, bu yuzden ihtiyac duyulan alanlari tasiyan sade bir DTO kullanilir.
- */
 public class PageResponse<T> {
 
     private List<T> content;

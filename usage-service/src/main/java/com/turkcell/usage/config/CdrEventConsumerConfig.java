@@ -12,12 +12,6 @@ import org.springframework.messaging.Message;
 
 import java.util.function.Consumer;
 
-/**
- * FR-17: CDR mediation/simulator'in telco.cdr.events'e yazdigi CdrRecorded event'lerini dinler.
- * Zarfin payload'u CdrEventIngestRequest ile birebir ayni alanlara sahiptir (REST endpoint'i
- * CdrEventController ile paylasilan sozlesme) - ikisi de ayni CdrEventService.ingest(...) metoduna
- * yonlenir, externalCdrId uzerinden ayni idempotency garantisi gecerlidir (en-az-bir-kez teslimat).
- */
 @Configuration
 public class CdrEventConsumerConfig {
 

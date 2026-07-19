@@ -102,7 +102,7 @@ class AddonServiceTest {
         AddonResponse response = addonService.patchAddon("ADN-001", request);
 
         assertThat(response.getPrice()).isEqualByComparingTo("75.00");
-        assertThat(response.getName()).isEqualTo("Extra 5GB"); // degismedi
+        assertThat(response.getName()).isEqualTo("Extra 5GB");
         verify(outboxEventService).publish(eq("Addon"), eq(addon.getId()), eq("AddonUpdated"), any());
     }
 

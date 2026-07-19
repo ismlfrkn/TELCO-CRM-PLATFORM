@@ -72,7 +72,7 @@ public class AddonService {
     @CacheEvict(cacheNames = "addons", key = "#code")
     public AddonResponse updateAddon(String code, AddonUpdateRequest request) {
         Addon addon = getAddonByCode(code);
-        
+
         addon.setName(request.getName());
         addon.setPrice(request.getPrice());
         addon.setType(request.getType());
@@ -90,7 +90,7 @@ public class AddonService {
     @CacheEvict(cacheNames = "addons", key = "#code")
     public AddonResponse patchAddon(String code, AddonPatchRequest request) {
         Addon addon = getAddonByCode(code);
-        
+
         if (request.getName() != null) addon.setName(request.getName());
         if (request.getPrice() != null) addon.setPrice(request.getPrice());
         if (request.getType() != null) addon.setType(request.getType());

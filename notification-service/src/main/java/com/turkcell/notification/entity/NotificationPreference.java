@@ -12,11 +12,6 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * FR-30: kullanicinin bir kanaldan (SMS/EMAIL/PUSH) bildirim alip almak istemedigini tutar.
- * Kayit yoksa varsayilan opted-in kabul edilir (bkz. NotificationPreferenceService.isOptedIn) -
- * boylece mevcut senaryolar (welcome SMS vb.) musteri hicbir tercih belirtmeden calismaya devam eder.
- */
 @Entity
 @Table(name = "notification_preferences")
 public class NotificationPreference {

@@ -19,12 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * API Gateway JWT'yi dogrular ve X-User-Id / X-User-Roles header'lariyla iletir; customer-service
- * (diger tum servisler gibi) JWT'yi tekrar dogrulamaz, gateway'e guvenir. Bu guvenin sahte header ile
- * taklit edilememesi icin gateway ile paylasilan internal secret (X-Internal-Gateway-Secret) zorunlu
- * kilinir; secret eksik/yanlissa header'lar yok sayilir (identity-service ile birebir ayni pattern).
- */
 @Component
 public class GatewayHeaderAuthenticationFilter extends OncePerRequestFilter {
 

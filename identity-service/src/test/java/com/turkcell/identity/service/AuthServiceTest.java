@@ -32,11 +32,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Refresh token rotation + reuse detection, platformdaki en guvenlik-kritik mantik (bkz.
- * dokuman bolum 13). Gercek bir JwtTokenProvider kullaniliyor - token uretme/parse etme
- * kriptografik/deterministik oldugu icin mock'lamak anlamsiz ve kirilgan olurdu.
- */
 class AuthServiceTest {
 
     private UserRepository userRepository;
@@ -200,7 +195,7 @@ class AuthServiceTest {
         stored.setUserId(activeUser.getId());
         stored.setTokenHash(sha256(refreshToken));
         stored.setExpiresAt(Instant.now().plusSeconds(3600));
-        stored.setRevoked(true); // zaten kullanilmis/rotate edilmis
+        stored.setRevoked(true);
 
         when(redisTemplate.hasKey("refresh-token-blacklist:" + jti)).thenReturn(false);
         when(refreshTokenRepository.findByTokenHash(sha256(refreshToken))).thenReturn(Optional.of(stored));
@@ -255,7 +250,7 @@ class AuthServiceTest {
         RefreshRequest request = new RefreshRequest();
         request.setRefreshToken("not-a-real-jwt");
 
-        authService.logout(request); // atmamali
+        authService.logout(request);
 
         verifyNoInteractions(auditLogService);
     }

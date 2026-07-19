@@ -8,10 +8,6 @@ import reactor.test.StepVerifier;
 
 import java.net.InetSocketAddress;
 
-/**
- * userKeyResolver, RequestRateLimiter'in sayim yapacagi anahtari uretir: kimligi dogrulanmis
- * istekler icin X-User-Id, aksi halde (login gibi permitAll rotalar) istemci IP'si.
- */
 class RateLimiterConfigTest {
 
     private final KeyResolver keyResolver = new RateLimiterConfig().userKeyResolver();

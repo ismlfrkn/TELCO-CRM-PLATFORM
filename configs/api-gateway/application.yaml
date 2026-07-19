@@ -5,7 +5,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,prometheus
   endpoint:
     gateway:
       enabled: true
@@ -18,12 +18,6 @@ spring:
   cloud:
     gateway:
       default-filters:
-        # Bolum 12: kullanici basina 100 req/min. RedisRateLimiter saniye bazli token-bucket
-        # calisir (dakika bazli sabit pencere degil), bu yuzden 100/dk hedefi replenishRate
-        # (saniyede yenilenen token) = ceil(100/60) = 2 ile yaklasik olarak karsilanir (~120/dk
-        # sabit hiz); burstCapacity=100 istegin kendisindeki "100" degerini bir anlik izin
-        # havuzu olarak temsil eder. key-resolver: JWT dogrulanmissa X-User-Id, aksi halde
-        # (ör. /api/v1/auth/**) istemci IP'si (bkz. RateLimiterConfig.userKeyResolver).
         - name: RequestRateLimiter
           args:
             redis-rate-limiter.replenishRate: 2
@@ -71,6 +65,3 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=/api/v1/orders/**
-
-# jwt.secret configs/application.yaml (global) icinde tanimlidir; identity-service ile ayni
-# degeri tek kaynaktan okur.

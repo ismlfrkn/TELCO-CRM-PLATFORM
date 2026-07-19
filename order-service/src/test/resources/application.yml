@@ -16,8 +16,6 @@ eureka:
 gateway:
   internal-secret: test-secret
 
-# configs/order-service/application.yml ile birebir ayni (config-server test'te devre disi oldugu
-# icin oradan hic gelmiyor) - GatewayResilienceTest gercek/uretim degerlerini dogrulasin diye.
 resilience4j:
   circuitbreaker:
     configs:

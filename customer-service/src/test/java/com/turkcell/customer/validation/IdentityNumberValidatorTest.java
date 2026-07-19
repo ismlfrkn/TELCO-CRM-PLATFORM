@@ -4,12 +4,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * TCKN checksum algoritmasi (11 haneli kimlik no dogrulama) yanlis yazilirsa gecerli musteriler
- * reddedilir ya da gecersiz kimlikler kabul edilir - bu yuzden algoritmanin kendisi izole test edilir.
- * "10000000146" Turkiye'de yaygin kullanilan, algoritmik olarak gecerli bir test TCKN'sidir
- * (gercek bir kisiye ait degildir).
- */
 class IdentityNumberValidatorTest {
 
     @Test

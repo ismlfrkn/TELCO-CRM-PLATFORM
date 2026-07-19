@@ -85,7 +85,7 @@ class CustomerServiceTest {
         request.setType("CORPORATE");
         request.setFirstName("Acme");
         request.setLastName("Corp");
-        request.setIdentityNumber("0234567890"); // leading zero, gecersiz VKN
+        request.setIdentityNumber("0234567890");
 
         assertThatThrownBy(() -> customerService.createCustomer(request))
                 .isInstanceOf(InvalidIdentityNumberException.class);
@@ -149,7 +149,7 @@ class CustomerServiceTest {
         CustomerResponse response = customerService.updateCustomer(customer.getId(), request);
 
         assertThat(response.getFirstName()).isEqualTo("Updated");
-        assertThat(response.getIdentityNumber()).isEqualTo(VALID_TCKN); // degistirilemez
+        assertThat(response.getIdentityNumber()).isEqualTo(VALID_TCKN);
         verify(outboxEventService).publish(eq("Customer"), eq(customer.getId()), eq("CustomerUpdated"), any());
         verify(auditLogService).record(eq("CUSTOMER_UPDATED"), eq("Customer"), eq(customer.getId()), eq(null), any());
     }

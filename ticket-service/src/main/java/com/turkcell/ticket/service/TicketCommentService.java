@@ -28,7 +28,7 @@ public class TicketCommentService {
 
     @Transactional
     public TicketCommentResponse addComment(UUID ticketId, TicketCommentCreateRequest request) {
-        ticketService.getTicketById(ticketId); // ticket yoksa TicketNotFoundException firlatir
+        ticketService.getTicketById(ticketId);
 
         TicketComment comment = new TicketComment();
         comment.setTicketId(ticketId);

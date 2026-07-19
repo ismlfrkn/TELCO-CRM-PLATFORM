@@ -18,10 +18,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
-/**
- * musteri dogrulugu bu servisin sorumlulugunda degildir: diger servislerle ayni gerekceyle, bu
- * kontrolun cagiran tarafinda yapildigi varsayilir.
- */
 @Service
 public class TicketService {
 
@@ -51,7 +47,7 @@ public class TicketService {
         ticket.setStatus(Ticket.STATUS_OPEN);
         ticket.setSlaId(sla.getId());
         ticket.setSlaDueAt(Instant.now().plus(sla.getResolutionTime(), ChronoUnit.MINUTES));
-        // FR-32: otomatik olarak ilgili ekibe SLA bazli atanir.
+
         ticket.setAssignedTeam(routeTeam(request.getCategory()));
         ticket = ticketRepository.save(ticket);
 
@@ -104,11 +100,6 @@ public class TicketService {
         return response;
     }
 
-    /**
-     * Zamanlanmis bir job yerine (diger servislerdeki bill-run/markOverdue ile ayni bilincli
-     * kapsam disi birakma) manuel tetiklenen bir esik kontrolu: son teslim tarihi gecmis ve
-     * hala cozulmemis bir ticket icin SlaBreached event'i yayinlar.
-     */
     @Transactional
     public TicketResponse markSlaBreached(UUID id) {
         Ticket ticket = getTicketById(id);

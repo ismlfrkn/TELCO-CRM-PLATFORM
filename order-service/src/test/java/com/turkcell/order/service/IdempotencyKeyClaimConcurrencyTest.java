@@ -20,14 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * payment-service (Idempotency-Key), usage-service (externalCdrId) ve billing-service
- * (subscriptionId+periyot) ile ayni temel eszamanlilik dersinin order-service'teki dorduncu
- * uygulamasi, ama burada "claim" deseni test ediliyor: saga BASLAMADAN once anahtar rezerve edilir,
- * bu yuzden ayni Idempotency-Key ile ayni anda gelen isteklerden SADECE BIRI claim'i kazanmali
- * (bos Optional donmeli), digerleri saga hala islenmekte oldugu icin
- * OrderProcessingInProgressException almali - hicbiri saga'yi tekrar calistirmamali.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class IdempotencyKeyClaimConcurrencyTest {

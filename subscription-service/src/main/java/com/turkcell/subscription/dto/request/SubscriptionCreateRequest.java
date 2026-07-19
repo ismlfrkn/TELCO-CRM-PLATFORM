@@ -13,15 +13,10 @@ public class SubscriptionCreateRequest {
     @NotBlank(message = "Tariff code cannot be blank")
     private String tariffCode;
 
-    // FR-08: caller'in (ör. order-service) siparis anindaki tarife versiyonunu iletmesi icin;
-    // opsiyoneldir, bu servis versiyonu dogrulamaz.
     private Integer tariffVersion;
 
-    // Bos birakilirsa havuzdan otomatik musait bir numara tahsis edilir.
     private String msisdn;
 
-    // Sadece PaymentCompleted event'i uzerinden tetiklenen aktivasyonlarda dolu - idempotency
-    // anahtari olarak kullanilir (bkz. Subscription.orderId).
     private UUID orderId;
 
     public UUID getCustomerId() { return customerId; }

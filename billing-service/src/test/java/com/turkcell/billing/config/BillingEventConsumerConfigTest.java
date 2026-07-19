@@ -46,8 +46,6 @@ class BillingEventConsumerConfigTest {
         return MessageBuilder.withPayload(json).build();
     }
 
-    // ---- subscriptionEvents ----
-
     @Test
     void subscriptionActivatedCreatesBillCycle() {
         UUID customerId = UUID.randomUUID();
@@ -87,7 +85,7 @@ class BillingEventConsumerConfigTest {
         when(billCycleService.createBillCycle(any())).thenThrow(new DuplicateBillCycleException("already exists"));
 
         config.subscriptionEvents().accept(envelope(UUID.randomUUID(), "SubscriptionActivated", payload));
-        // exception yutulur, test'in kendisi hic firlatilmadan tamamlanmasini dogrular
+
     }
 
     @Test
@@ -100,8 +98,6 @@ class BillingEventConsumerConfigTest {
 
         verifyNoInteractions(billCycleService);
     }
-
-    // ---- paymentEvents ----
 
     @Test
     void paymentCompletedWithInvoiceIdMarksInvoicePaid() {
@@ -135,7 +131,7 @@ class BillingEventConsumerConfigTest {
         doThrow(new InvalidInvoiceStateException("already PAID")).when(invoiceService).markPaid(invoiceId);
 
         config.paymentEvents().accept(envelope(UUID.randomUUID(), "PaymentCompleted", payload));
-        // exception yutulur
+
     }
 
     @Test
@@ -148,8 +144,6 @@ class BillingEventConsumerConfigTest {
 
         verifyNoInteractions(invoiceService);
     }
-
-    // ---- usageEvents ----
 
     @Test
     void usageAggregatedIsPersisted() {
@@ -177,7 +171,7 @@ class BillingEventConsumerConfigTest {
                 """.formatted(UUID.randomUUID());
 
         config.usageEvents().accept(envelope(UUID.randomUUID(), "UsageAggregated", payload));
-        // exception yutulur
+
     }
 
     @Test

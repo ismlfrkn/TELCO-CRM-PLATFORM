@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery-server
+  namespace: telco-crm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discovery-server
+  template:
+    metadata:
+      labels:
+        app: discovery-server
+    spec:
+      containers:
+        - name: discovery-server
+          image: telco-discovery-server:latest
+          ports:
+            - containerPort: 8761
+          env:
+            - { name: JAVA_TOOL_OPTIONS, value: "-Xms64m -Xmx256m" }
+          resources:
+            requests: { memory: "256Mi", cpu: "100m" }
+            limits: { memory: "384Mi", cpu: "400m" }
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8761 }
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8761 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8761 }
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discovery-server
+  namespace: telco-crm
+spec:
+  selector:
+    app: discovery-server
+  ports:
+    - port: 8761
+      targetPort: 8761

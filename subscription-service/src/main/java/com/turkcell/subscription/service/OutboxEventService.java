@@ -8,13 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/**
- * Domain event'leri outbox tablosuna yazar. Cagiran servis metodu zaten @Transactional oldugu icin
- * bu satir, is durumundaki degisiklikle (ornegin Subscription.save) AYNI DB transaction'inda commit
- * olur - boylece "durum degisti ama event kayboldu" ya da tam tersi asla olmaz (outbox pattern).
- * Bu satirlari gercekten Kafka'ya basacak bir publisher worker henuz yok; bu servis sadece "yazma"
- * tarafini dogru sekilde kapatir.
- */
 @Service
 public class OutboxEventService {
 

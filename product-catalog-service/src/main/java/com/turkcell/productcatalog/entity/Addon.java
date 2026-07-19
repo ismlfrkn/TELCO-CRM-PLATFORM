@@ -29,7 +29,7 @@ public class Addon {
     private BigDecimal price;
 
     @Column(nullable = false)
-    private String type; // DATA, SMS, MINUTES, VAS
+    private String type;
 
     @Column(name = "validity_days", nullable = false)
     private int validityDays;
@@ -38,7 +38,7 @@ public class Addon {
     private String currency;
 
     @Column(nullable = false, length = 20)
-    private String status; // ACTIVE, INACTIVE
+    private String status;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

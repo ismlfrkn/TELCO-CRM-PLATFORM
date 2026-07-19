@@ -24,13 +24,6 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * FR-21'in dogal riski: bill-run ayni donem icin yanlislikla iki kez (veya eszamanli olarak)
- * tetiklenirse musteri ayni donem icin iki kez faturalandirilmamali. payment-service (Idempotency-Key)
- * ve usage-service (externalCdrId) ile ayni desenin billing-service'teki ucuncu uygulamasi: bu test
- * gercek bir Postgres'e karsi, ayni (subscriptionId, periodStart, periodEnd) icin ayni anda cok
- * sayida istek gelse bile sadece TEK bir Invoice olustugunu dogrular.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class InvoiceDuplicationConcurrencyTest {

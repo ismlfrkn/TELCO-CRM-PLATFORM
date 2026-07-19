@@ -49,7 +49,7 @@ public class ProductOfferingService {
     @Transactional
     public ProductOfferingResponse createProductOffering(ProductOfferingCreateRequest request) {
         Tariff tariff = tariffService.getTariffByCode(request.getTariffCode());
-        
+
         ProductOffering offering = new ProductOffering();
         offering.setCode(request.getCode());
         offering.setName(request.getName());
@@ -69,7 +69,7 @@ public class ProductOfferingService {
     public ProductOfferingResponse updateProductOffering(String code, ProductOfferingUpdateRequest request) {
         ProductOffering offering = getProductOfferingByCode(code);
         Tariff tariff = tariffService.getTariffByCode(request.getTariffCode());
-        
+
         offering.setName(request.getName());
         offering.setDescription(request.getDescription());
         offering.setTariff(tariff);
@@ -86,7 +86,7 @@ public class ProductOfferingService {
     @Transactional
     public ProductOfferingResponse patchProductOffering(String code, ProductOfferingPatchRequest request) {
         ProductOffering offering = getProductOfferingByCode(code);
-        
+
         if (request.getName() != null) offering.setName(request.getName());
         if (request.getDescription() != null) offering.setDescription(request.getDescription());
         if (request.getStatus() != null) offering.setStatus(request.getStatus());

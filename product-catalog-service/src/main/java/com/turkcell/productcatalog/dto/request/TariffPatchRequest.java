@@ -19,7 +19,6 @@ public class TariffPatchRequest {
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
 
-    // Getters and Setters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

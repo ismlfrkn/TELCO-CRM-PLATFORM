@@ -16,10 +16,10 @@ public class SimCard {
     private String imsi;
 
     @Column
-    private String msisdn; // null until assigned to a pool number
+    private String msisdn;
 
     @Column(nullable = false)
-    private String status; // UNASSIGNED, ASSIGNED
+    private String status;
 
     public SimCard() {
     }

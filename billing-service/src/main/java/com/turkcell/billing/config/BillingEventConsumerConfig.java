@@ -23,17 +23,6 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
- * CLAUDE.md Bolum 7: billing-service'in Consume ettigi 3 event turu icin fonksiyonel Consumer<T>
- * bean'leri (spring-cloud-starter-stream-kafka, @KafkaListener kullanilmaz):
- *  - subscriptionEvents: SubscriptionActivated -> musteriye ilk kez BillCycle acilir (idempotent,
- *    reaktivasyonda da ayni event geldigi icin "zaten var" durumu hata degildir).
- *  - paymentEvents: PaymentCompleted -> SADECE payload'inda invoiceId doluysa islenir (bu, order
- *    saga'sindaki (Grup 3) odeme degil, bir faturanin auto-pay ile odendigini gosterir); Invoice PAID'e
- *    cekilir.
- *  - usageEvents: UsageAggregated -> asim miktari usage_aggregates tablosunda biriktirilir (bkz.
- *    UsageAggregate entity'sindeki not: fiyatlandirma/InvoiceLine'a donusturme scope disi).
- */
 @Configuration
 public class BillingEventConsumerConfig {
 
@@ -93,7 +82,7 @@ public class BillingEventConsumerConfig {
             JsonNode payload = envelope.get("payload");
             JsonNode invoiceIdNode = payload.get("invoiceId");
             if (invoiceIdNode == null || invoiceIdNode.isNull()) {
-                // orderId doluysa bu Grup 3 saga'sindaki siparis odemesidir, billing-service'i ilgilendirmez.
+
                 return;
             }
 

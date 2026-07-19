@@ -23,7 +23,7 @@ public class TicketComment {
     private UUID ticketId;
 
     @Column(name = "author_id", nullable = false)
-    private UUID authorId; // identity-service'e ait, cross-service referans (FK degil)
+    private UUID authorId;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String body;

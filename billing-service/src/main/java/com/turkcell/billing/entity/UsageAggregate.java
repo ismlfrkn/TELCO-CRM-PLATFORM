@@ -13,12 +13,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/**
- * FR-20: usage-service'in UsageAggregated event'iyle bildirdigi asim kullanimlarinin billing
- * tarafinda biriktirildigi (agregasyon) tablo. invoiceId NULL oldugu surece "unclaimed" sayilir;
- * InvoiceService bir bill-run'da bu satiri bir faturaya donusturdugunde invoiceId'yi set ederek
- * ayni asimin bir sonraki bill-run'da tekrar faturalanmasini (cift ucretlendirmeyi) engeller.
- */
 @Entity
 @Table(name = "usage_aggregates")
 public class UsageAggregate {
@@ -45,12 +39,9 @@ public class UsageAggregate {
     @Column(name = "period_end")
     private LocalDate periodEnd;
 
-    // usage-service outbox'undaki event id'si - ayni event en-az-bir-kez teslimatla tekrar
-    // gelirse UNIQUE constraint sayesinde ikinci kez islenmez (idempotent consumer).
     @Column(name = "source_event_id", nullable = false, unique = true)
     private UUID sourceEventId;
 
-    // NULL: henuz faturalanmamis (unclaimed). Dolu: bu asim hangi faturaya islendi.
     @Column(name = "invoice_id")
     private UUID invoiceId;
 

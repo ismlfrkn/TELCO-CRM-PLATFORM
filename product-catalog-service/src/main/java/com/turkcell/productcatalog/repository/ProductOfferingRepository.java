@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Repository
 public interface ProductOfferingRepository extends JpaRepository<ProductOffering, UUID> {
-    
+
     Optional<ProductOffering> findByCode(String code);
 
     Optional<ProductOffering> findByCodeAndStatusNot(String code, String status);

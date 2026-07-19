@@ -86,9 +86,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
-        // Not: @PreAuthorize reddi (method-security), Spring Security'nin filter-chain seviyesindeki
-        // AccessDeniedHandler'ini degil, buradaki handler'i tetikler - cunku istek DispatcherServlet'e
-        // zaten ulasmis, hata controller metod cagrisi sirasinda firlatiliyor.
+
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You do not have permission to perform this action");
         problemDetail.setType(URI.create("https://telco.example/errors/access-denied"));
         problemDetail.setTitle("Access denied");

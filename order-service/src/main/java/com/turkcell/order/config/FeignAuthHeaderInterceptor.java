@@ -7,15 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-/**
- * order-service, saga'yi yurutmek icin customer/product-catalog/subscription/payment servislerini
- * doğrudan (gateway'i atlayarak, Eureka uzerinden) cagirir. Ama o servislerin
- * GatewayHeaderAuthenticationFilter'i sadece X-Internal-Gateway-Secret header'i dogruysa X-User-Id'ye
- * guvenir - yani order-service de tipki gateway gibi bu secret'i bilmek ve iletmek zorunda, aksi halde
- * tum downstream cagrilar 401 doner. Gelen isteğin zaten gateway tarafindan dogrulanmis X-User-Id'si
- * de oldugu gibi ileri tasinir (dogumun ilk incelemesinde tespit edilen "service-to-service trust"
- * eksikliginin cozumu tam olarak budur).
- */
 @Configuration
 public class FeignAuthHeaderInterceptor {
 

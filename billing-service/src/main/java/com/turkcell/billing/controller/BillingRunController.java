@@ -23,16 +23,13 @@ public class BillingRunController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','BILLING_OPERATOR')")
-    public BillingRunResponse run(@Valid @RequestBody BillingRunRequest request) {
-        return billingRunService.run(request);
+    public BillingRunResponse run(@Valid @RequestBody BillingRunAutoRequest request) {
+        return billingRunService.runAutomatic(request);
     }
 
-    /**
-     * FR-21: otomatik mod - abone/tarife bilgisi disaridan verilmez, billing-service
-     * subscription-service + product-catalog-service'ten kendisi turetir (bkz. BillingRunService).
-     */
-    @PostMapping("/auto")
-    public BillingRunResponse runAutomatic(@Valid @RequestBody BillingRunAutoRequest request) {
-        return billingRunService.runAutomatic(request);
+    @PostMapping("/manual")
+    @PreAuthorize("hasAnyRole('ADMIN','BILLING_OPERATOR')")
+    public BillingRunResponse runManual(@Valid @RequestBody BillingRunRequest request) {
+        return billingRunService.run(request);
     }
 }

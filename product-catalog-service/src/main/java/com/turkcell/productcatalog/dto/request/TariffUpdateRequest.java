@@ -44,10 +44,10 @@ public class TariffUpdateRequest {
     @Size(min = 3, max = 3, message = "Currency must be 3 characters")
     private String currency;
 
+    @NotNull(message = "Effective from date cannot be null")
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
 
-    // Getters and Setters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

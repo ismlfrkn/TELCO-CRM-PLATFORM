@@ -26,13 +26,13 @@ public class Invoice {
     private UUID id;
 
     @Column(name = "customer_id", nullable = false)
-    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+    private UUID customerId;
 
     @Column(name = "subscription_id", nullable = false)
-    private UUID subscriptionId; // subscription-service'e ait, cross-service referans (FK degil)
+    private UUID subscriptionId;
 
     @Column(name = "tariff_code")
-    private String tariffCode; // product-catalog-service'e ait, cross-service referans (FK degil)
+    private String tariffCode;
 
     @Column(name = "period_start", nullable = false)
     private LocalDate periodStart;

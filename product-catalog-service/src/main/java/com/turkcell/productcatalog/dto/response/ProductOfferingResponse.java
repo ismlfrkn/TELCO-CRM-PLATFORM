@@ -16,7 +16,6 @@ public class ProductOfferingResponse {
     private LocalDate effectiveTo;
     private Instant createdAt;
 
-    // Getters and Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 

@@ -19,11 +19,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * FR-28/FR-29: gercek bir SMS/e-posta/push saglayicisi entegre edilmedi (dokuman bolum 6.2 - "mock
- * kanal" MVP kapsaminda). Sablon + kanal dogrulandiktan sonra "gonderim" sadece loglanir ve
- * Notification kaydi SENT olarak isaretlenir - mock PSP'nin (payment-service) ayni sadelik seviyesi.
- */
 @Service
 public class NotificationService {
 
@@ -64,8 +59,6 @@ public class NotificationService {
         notification.setChannelId(channel.getId());
         notification.setPayloadJson(toJson(request.getPayload()));
 
-        // FR-30: kullanici bu kanaldan opt-out ettiyse gonderim yapilmaz, ama denemenin kendisi
-        // (KVKK/denetim izi icin) SKIPPED durumuyla kaydedilir.
         if (!notificationPreferenceService.isOptedIn(request.getUserId(), channel.getId())) {
             notification.setStatus(Notification.STATUS_SKIPPED);
             notification = notificationRepository.save(notification);

@@ -55,12 +55,6 @@ management:
     circuitbreakers:
       enabled: true
 
-# Hala senkron kalan Customer/Catalog dogrulama cagrilarina (Bolum 9.1) circuit breaker + retry.
-# recordExceptions/retryExceptions sadece transient/altyapisal hatalari (5xx, timeout, baglanti hatasi)
-# kapsar - FeignException.NotFound gibi normal is sonuclari bu listelere dahil edilmedi, cunku onlar
-# downstream servisin sagligiyla degil isteğin kendisiyle ilgili (bkz. OrderService client gateway'leri).
-# payment-service/subscription-service instance'lari kasten yok: Order->Payment/Subscription artik
-# Kafka choreography ile asenkron (Bolum 8.2), o servislere senkron Feign cagrisi kalmadi.
 resilience4j:
   circuitbreaker:
     configs:

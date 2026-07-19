@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @Repository
 public interface AddonRepository extends JpaRepository<Addon, UUID> {
-    
+
     Optional<Addon> findByCode(String code);
 
     Optional<Addon> findByCodeAndStatusNot(String code, String status);

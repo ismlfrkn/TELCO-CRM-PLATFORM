@@ -8,12 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-/**
- * Saga'nin en kirilgan noktasi olan senkron Feign zincirini (Bolum 9.2) circuit breaker + retry ile
- * korur. FeignException.NotFound (musteri yok) transient bir altyapi hatasi degil normal bir is
- * sonucu oldugu icin resilience4j config'indeki recordExceptions/retryExceptions listelerine dahil
- * edilmedi - retry/CB tetiklenmeden dogrudan cagirana ulasir (bkz. configs/order-service).
- */
 @Component
 public class CustomerServiceGateway {
 

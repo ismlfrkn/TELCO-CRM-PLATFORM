@@ -23,7 +23,6 @@ public class ProductOfferingCreateRequest {
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
 
-    // Getters and Setters
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
 

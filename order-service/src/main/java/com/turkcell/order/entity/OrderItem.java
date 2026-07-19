@@ -22,10 +22,10 @@ public class OrderItem {
     private UUID orderId;
 
     @Column(name = "product_code", nullable = false)
-    private String productCode; // product-catalog-service'e ait, cross-service referans (FK degil)
+    private String productCode;
 
     @Column(name = "product_type", nullable = false)
-    private String productType; // TARIFF, ADDON
+    private String productType;
 
     @Column(nullable = false)
     private int quantity;

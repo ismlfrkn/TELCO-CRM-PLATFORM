@@ -51,7 +51,7 @@ class CdrEventServiceTest {
         when(usageRecordRepository.save(any())).thenAnswer(inv -> {
             com.turkcell.usage.entity.UsageRecord usageRecord = inv.getArgument(0);
             if (usageRecord.getId() == null) {
-                usageRecord.setId(UUID.randomUUID()); // gercek DB'de save sirasinda uretilen id'yi simule eder
+                usageRecord.setId(UUID.randomUUID());
             }
             return usageRecord;
         });
@@ -73,7 +73,7 @@ class CdrEventServiceTest {
         request.setMsisdn("905550000001");
         request.setCdrType("VOICE");
         request.setStartTime(Instant.now());
-        request.setDurationSeconds(61); // 61sn -> yukari yuvarlanmis 2 dakika
+        request.setDurationSeconds(61);
 
         CdrEventResponse response = cdrEventService.ingest(request);
 
@@ -116,7 +116,7 @@ class CdrEventServiceTest {
         request.setMsisdn("905550000001");
         request.setCdrType("DATA");
         request.setStartTime(Instant.now());
-        request.setDataVolumeBytes(5_000_000L); // 5 MB
+        request.setDataVolumeBytes(5_000_000L);
 
         cdrEventService.ingest(request);
 

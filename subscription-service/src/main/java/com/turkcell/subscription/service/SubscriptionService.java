@@ -19,13 +19,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * musteri/tarife dogrulugu bu servisin sorumlulugunda degildir: dokumanin 9.1 bolumune gore bu
- * kontroller Order Service tarafinda (senkron) yapilir, Order Service subscription'i "zaten
- * dogrulanmis" olarak olusturur/yonetir. order-service henuz yazilmadigi icin bu endpoint'ler su an
- * dogrudan cagrilabilir haldedir (identity/customer/catalog servisleriyle ayni test edilebilirlik
- * seviyesinde).
- */
 @Service
 public class SubscriptionService {
 
@@ -54,18 +47,10 @@ public class SubscriptionService {
         this.outboxEventService = outboxEventService;
         this.auditLogService = auditLogService;
 
-        // REQUIRES_NEW: MSISDN tahsisi + Subscription insert'i TEK bir izole transaction'da yapilir -
-        // order_id UNIQUE kisitina carpip rollback olursa, tahsis edilen MSISDN de ayni transaction
-        // icinde geri alinir (sizinti olmaz). payment-service'teki createPayment ile ayni desen.
         this.newSubscriptionTransactionTemplate = new TransactionTemplate(transactionManager);
         this.newSubscriptionTransactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
     }
 
-    /**
-     * request.orderId doluysa (PaymentCompleted event'i uzerinden tetiklenen aktivasyon), ayni siparis
-     * icin ikinci kez cagrilirsa (en-az-bir-kez teslim) yeni bir abonelik acmaz, ilk sonucu dondurur.
-     * orderId bossa (dogrudan REST cagrisi) idempotency kontrolu atlanir, eski davranis aynen sürer.
-     */
     public SubscriptionResponse createSubscription(SubscriptionCreateRequest request) {
         if (request.getOrderId() != null) {
             Optional<Subscription> existing = subscriptionRepository.findByOrderId(request.getOrderId());
@@ -120,11 +105,6 @@ public class SubscriptionService {
         return subscriptionRepository.findAllByCustomerId(customerId, pageable).map(subscriptionMapper::toResponse);
     }
 
-    /**
-     * FR-21: billing-service'in bill-run'i otomatik tetikleyebilmesi icin - "hangi aboneler
-     * faturalanacak" bilgisini artik cagiran taraf elle vermek yerine, billing-service bu endpoint'i
-     * senkron cagirip aktif abone listesini kendisi cekiyor (bkz. billing-service BillingRunService).
-     */
     public Page<SubscriptionResponse> getActiveSubscriptions(Pageable pageable) {
         return subscriptionRepository.findAllByStatus(STATUS_ACTIVE, pageable).map(subscriptionMapper::toResponse);
     }
@@ -153,8 +133,6 @@ public class SubscriptionService {
         subscription.setStatus(STATUS_ACTIVE);
         subscriptionRepository.save(subscription);
 
-        // Dokumanin event sozlugunde ayri bir "SubscriptionReactivated" event'i tanimli degil;
-        // tuketiciler acisindan "tekrar aktif" sinyali SubscriptionActivated ile ayni anlama gelir.
         SubscriptionResponse after = subscriptionMapper.toResponse(subscription);
         outboxEventService.publish(AGGREGATE_TYPE, subscription.getId(), EVENT_ACTIVATED, after);
         auditLogService.record("SUBSCRIPTION_REACTIVATED", AGGREGATE_TYPE, subscription.getId(), before, after);

@@ -2,6 +2,8 @@ package com.turkcell.subscription.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.turkcell.subscription.client.ProductCatalogServiceClient;
+import com.turkcell.subscription.client.TariffClientDto;
 import com.turkcell.subscription.dto.request.SubscriptionCreateRequest;
 import com.turkcell.subscription.service.OutboxEventService;
 import com.turkcell.subscription.service.SubscriptionService;
@@ -16,13 +18,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
- * Order->Subscription aktivasyonu CLAUDE.md Bolum 8.2'deki choreography'e gore fonksiyonel
- * Consumer<T> bean'i ile calisir: sadece PaymentCompleted'e tepki verir (PaymentFailed order-service'in
- * dogrudan ilgilendigi bir konu, subscription-service'i ilgilendirmez). Aktivasyon basarisiz olursa
- * (orn. MSISDN havuzu tukendi) SubscriptionActivationFailed yayinlanir - bu hem payment-service'teki
- * refund kompansasyonunu hem de order-service'teki OrderCancelled'i bagimsiz olarak tetikler.
- */
 @Configuration
 public class SagaEventConsumerConfig {
 
@@ -32,12 +27,14 @@ public class SagaEventConsumerConfig {
     private final SubscriptionService subscriptionService;
     private final OutboxEventService outboxEventService;
     private final ObjectMapper objectMapper;
+    private final ProductCatalogServiceClient productCatalogServiceClient;
 
     public SagaEventConsumerConfig(SubscriptionService subscriptionService, OutboxEventService outboxEventService,
-                                    ObjectMapper objectMapper) {
+                                    ObjectMapper objectMapper, ProductCatalogServiceClient productCatalogServiceClient) {
         this.subscriptionService = subscriptionService;
         this.outboxEventService = outboxEventService;
         this.objectMapper = objectMapper;
+        this.productCatalogServiceClient = productCatalogServiceClient;
     }
 
     @Bean
@@ -68,6 +65,7 @@ public class SagaEventConsumerConfig {
             request.setTariffCode(tariffCode);
 
             try {
+                request.setTariffVersion(resolveTariffVersion(tariffCode));
                 subscriptionService.createSubscription(request);
             } catch (Exception ex) {
                 log.warn("Subscription activation failed for order {}, publishing SubscriptionActivationFailed",
@@ -77,14 +75,18 @@ public class SagaEventConsumerConfig {
         };
     }
 
+    private int resolveTariffVersion(String tariffCode) {
+        TariffClientDto tariff = productCatalogServiceClient.getTariff(tariffCode);
+        return tariff.getVersion();
+    }
+
     private void publishActivationFailed(UUID orderId, UUID customerId, String tariffCode, String reason) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("orderId", orderId.toString());
         payload.put("customerId", customerId.toString());
         payload.put("tariffCode", tariffCode);
         payload.put("reason", reason);
-        // aggregateId olarak orderId kullanilir - bu basarisizlikta olusmus bir Subscription yok,
-        // ama tuketicilerin (payment-service, order-service) korele edecegi tek ortak kimlik orderId.
+
         outboxEventService.publish(AGGREGATE_TYPE, orderId, "SubscriptionActivationFailed", payload);
     }
 

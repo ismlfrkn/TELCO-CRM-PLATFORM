@@ -37,10 +37,6 @@ public class SubscriptionController {
         return subscriptionService.getSubscriptionsByCustomer(customerId, pageable);
     }
 
-    /**
-     * FR-21: billing-service'in otomatik bill-run'i icin - musteriye/kimlige gore filtrelemeden,
-     * sistemdeki tum ACTIVE abonelikleri sayfalanmis sekilde doner.
-     */
     @GetMapping("/active")
     public Page<SubscriptionResponse> getActive(Pageable pageable) {
         return subscriptionService.getActiveSubscriptions(pageable);

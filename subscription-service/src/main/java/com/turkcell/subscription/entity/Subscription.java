@@ -20,23 +20,19 @@ public class Subscription {
     private UUID id;
 
     @Column(name = "customer_id", nullable = false)
-    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+    private UUID customerId;
 
     @Column(nullable = false)
-    private String msisdn; // msisdn_pool'a ait, ayni servis icinde referans
+    private String msisdn;
 
     @Column(name = "tariff_code", nullable = false)
-    private String tariffCode; // product-catalog-service'e ait, cross-service referans (FK degil)
+    private String tariffCode;
 
-    // FR-08: abonenin baglandigi tarifenin hangi versiyonuna sabitlendigi (product-catalog-service
-    // Tariff.version). Caller (ör. order-service) tarafindan siparis anindaki versiyonla doldurulmasi
-    // beklenir; bu servis tarife/versiyonu dogrulamaz (bkz. sinif javadoc'u). Bos birakilabilir -
-    // eski/manuel olusturulmus abonelikler icin bilinmiyor olabilir.
     @Column(name = "tariff_version")
     private Integer tariffVersion;
 
     @Column(nullable = false)
-    private String status; // ACTIVE, SUSPENDED, TERMINATED
+    private String status;
 
     @Column(name = "activated_at")
     private Instant activatedAt;
@@ -47,9 +43,6 @@ public class Subscription {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    // order-service'e ait, cross-service referans (FK degil). PaymentCompleted event'i uzerinden
-    // tetiklenen aktivasyonlarda dolu, dogrudan REST ile acilan (siparissiz) aboneliklerde bos kalir.
-    // UNIQUE kisit ayni siparis icin ikinci kez abonelik acilmasini engeller (idempotency).
     @Column(name = "order_id", unique = true)
     private UUID orderId;
 

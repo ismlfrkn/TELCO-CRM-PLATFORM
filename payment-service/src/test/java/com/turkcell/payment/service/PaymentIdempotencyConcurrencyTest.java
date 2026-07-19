@@ -22,12 +22,6 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * FR-26: "ayni paymentRequestId iki kez islenmez". Mockito, once-kontrol-sonra-yaz araligindaki
- * yarisi asagida DB UNIQUE constraint'e cakan istegin dogru sekilde toparlandigini kanitlayamaz -
- * bu yuzden gercek bir Postgres'e karsi ayni Idempotency-Key ile ayni anda cok sayida istek atip
- * hepsinin AYNI Payment satirini dondugunu ve DB'de tek satir olustugunu dogruluyoruz.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class PaymentIdempotencyConcurrencyTest {

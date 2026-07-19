@@ -25,17 +25,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Gateway'e gelen her istegi (auth/actuator disinda) Authorization: Bearer <token> ile dogrular,
- * gecerliyse token claim'lerinden turetilen X-User-Id / X-User-Roles header'larini (ve downstream
- * servislerin bu header'lara guvenmesi icin X-Internal-Gateway-Secret'i) enjekte eder.
- * Boylece downstream servisler JWT'yi tekrar dogrulamaz, sadece gateway'e (bu secret uzerinden) guvenir.
- *
- * WebFlux'ta MDC (thread-local) guvenilir calismadigi icin correlationId burada identity-service'teki
- * CorrelationIdFilter ile ayni Correlation-Id header'indan okunur/uretilir ve downstream'e aynen
- * iletilir - boylece tek bir istegin gateway'deki ve servisteki loglari/hata gövdeleri ayni id ile
- * eslesir (dogrudan §12.1 formatindaki instance/correlationId alanlari icin de kullanilir).
- */
 @Component
 public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
@@ -61,8 +50,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
         String correlationId = resolveCorrelationId(exchange);
 
         if (isPublicPath(path)) {
-            // Kimligi dogrulanmamis istekler de gecebilir; yine de client'in gateway-guveni
-            // header'larini forge etmesini engellemek icin bu header'lari temizliyoruz.
+
             ServerHttpRequest sanitizedRequest = exchange.getRequest().mutate()
                     .headers(httpHeaders -> {
                         stripTrustHeaders(httpHeaders);

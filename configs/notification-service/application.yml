@@ -22,8 +22,6 @@ spring:
     locations: classpath:db/migration
   cloud:
     function:
-      # Ayni anda birden fazla Consumer<T> bean'ini bagimsiz olarak baglamak icin ";" ile ayrilir
-      # ("|" fonksiyon zincirlemek icin kullanilir, burada istedigimiz o degil).
       definition: customerEvents;ticketEvents;catalogEvents;subscriptionEvents;billingEvents;orderEvents;paymentEvents;usageEvents
     stream:
       kafka:

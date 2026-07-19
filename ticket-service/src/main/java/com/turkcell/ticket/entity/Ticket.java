@@ -24,7 +24,7 @@ public class Ticket {
     private UUID id;
 
     @Column(name = "customer_id", nullable = false)
-    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+    private UUID customerId;
 
     @Column(nullable = false)
     private String category;
@@ -44,8 +44,6 @@ public class Ticket {
     @Column(name = "sla_id", nullable = false)
     private UUID slaId;
 
-    // ER diyagraminda yok, FR-32 ("otomatik olarak ilgili ekibe SLA bazli atanir") icin eklendi -
-    // diyagramin kendisi "kime atandi" bilgisini saklayacak bir alan tanimlamiyordu.
     @Column(name = "assigned_team")
     private String assignedTeam;
 

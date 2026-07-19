@@ -4,6 +4,8 @@ import com.turkcell.order.dto.request.OrderCreateRequest;
 import com.turkcell.order.dto.response.OrderResponse;
 import com.turkcell.order.service.OrderService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +26,11 @@ public class OrderController {
     public OrderResponse create(@RequestHeader("Idempotency-Key") String idempotencyKey,
                                  @Valid @RequestBody OrderCreateRequest request) {
         return orderService.createOrder(idempotencyKey, request);
+    }
+
+    @GetMapping
+    public Page<OrderResponse> getByCustomer(@RequestParam UUID customerId, Pageable pageable) {
+        return orderService.getOrdersByCustomer(customerId, pageable);
     }
 
     @GetMapping("/{id}")

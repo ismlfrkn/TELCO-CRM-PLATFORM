@@ -15,13 +15,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * FR-27: basarisiz odemeler icin otomatik retry. Bekleme suresi bir onceki denemenin
- * uzerine eklenir (kumulatif degil): 1. deneme basarisiz -> +24s sonra 2. deneme, o da
- * basarisiz -> +72s sonra 3. deneme, o da basarisiz -> +168s sonra 4. (son) deneme.
- * 4 denemeden sonra otomatik retry durur, odeme FAILED olarak kalir - manuel
- * POST /{id}/retry hala calisir, sadece scheduler bir daha denemez.
- */
 @Component
 public class PaymentRetryScheduler {
 
@@ -68,7 +61,7 @@ public class PaymentRetryScheduler {
         try {
             paymentService.retry(payment.getId());
         } catch (RuntimeException ex) {
-            // Tek bir odemenin retry'i patlarsa toplu taramanin geri kalani etkilenmemeli.
+
             log.warn("Scheduled retry failed for payment {}: {}", payment.getId(), ex.getMessage());
         }
     }

@@ -25,12 +25,6 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Gercek CDR mediation sistemleri en-az-bir-kez (at-least-once) teslimat yapar; ayni externalCdrId
- * birden fazla gelebilir. Bu test, ayni anda cok sayida istek AYNI externalCdrId ile geldiginde
- * sadece TEK bir CdrEvent/UsageRecord olustugunu ve kotanin sadece BIR KEZ dustugunu gercek Postgres'e
- * karsi dogrular (payment-service'teki idempotency testiyle ayni sinif problem).
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class CdrIdempotencyConcurrencyTest {
@@ -108,6 +102,6 @@ class CdrIdempotencyConcurrencyTest {
         assertThat(usageRecordRepository.count()).isEqualTo(1);
 
         int remaining = quotaService.getQuotaBySubscriptionId(subscriptionId).getMinutesRemaining();
-        assertThat(remaining).isEqualTo(999); // sadece 1 dakika dusulmus olmali, 15 kez degil
+        assertThat(remaining).isEqualTo(999);
     }
 }

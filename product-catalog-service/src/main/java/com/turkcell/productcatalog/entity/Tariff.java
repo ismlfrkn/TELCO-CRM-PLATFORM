@@ -22,8 +22,6 @@ public class Tariff {
     @Column(nullable = false, unique = true)
     private String code;
 
-    // FR-08: her updateTariff/patchTariff cagrisinda 1 artar; onceki durum tariff_versions'a
-    // degismez (immutable) bir kayit olarak arsivlenir (bkz. TariffService.archiveCurrentVersion).
     @Column(nullable = false)
     private int version;
 
@@ -31,7 +29,7 @@ public class Tariff {
     private String name;
 
     @Column(nullable = false)
-    private String type; // POSTPAID, PREPAID, HYBRID
+    private String type;
 
     @Column(name = "monthly_fee", nullable = false)
     private BigDecimal monthlyFee;
@@ -45,8 +43,6 @@ public class Tariff {
     @Column(name = "data_mb_included", nullable = false)
     private int dataMbIncluded;
 
-    // FR-20/FR-22: kota asimi ucretlendirmesinde kullanilan birim fiyatlar (billing-service bill-run
-    // sirasinda usage_aggregates'teki asim miktarini bu oranlarla carpar).
     @Column(name = "overage_rate_per_minute", nullable = false)
     private BigDecimal overageRatePerMinute = BigDecimal.ZERO;
 

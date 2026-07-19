@@ -16,7 +16,6 @@ public class AddonResponse {
     private String status;
     private Instant createdAt;
 
-    // Getters and Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 

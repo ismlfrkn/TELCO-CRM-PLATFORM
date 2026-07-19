@@ -5,6 +5,7 @@ import com.turkcell.billing.client.ProductCatalogServiceClient;
 import com.turkcell.billing.client.SubscriptionClientDto;
 import com.turkcell.billing.client.SubscriptionServiceClient;
 import com.turkcell.billing.client.TariffClientDto;
+import com.turkcell.billing.client.TariffVersionClientDto;
 import com.turkcell.billing.dto.request.BillingRunAutoRequest;
 import com.turkcell.billing.dto.request.BillingRunRequest;
 import com.turkcell.billing.dto.request.InvoiceCreateRequest;
@@ -18,13 +19,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * FR-21: "Aylik bill-run job'u ... fatura keser" - dokumanin kendi kabul kriterinde (bolum 14.2)
- * bu job'un MANUEL tetiklendigi acikca belirtiliyor, bu yuzden zamanlanmis (scheduled) bir gorev
- * kurulmadi; bu endpoint tam olarak o manuel tetiklemeyi temsil eder. Her satir kendi icinde
- * idempotent oldugu (InvoiceService.createInvoice) icin bill-run yanlislikla iki kez calistirilirsa
- * da cift fatura olusmaz.
- */
 @Service
 public class BillingRunService {
 
@@ -54,21 +48,12 @@ public class BillingRunService {
         return response;
     }
 
-    /**
-     * FR-21 otomatik mod: "hangi aboneye fatura kesilecek" ve "aylik ucret ne kadar" artik cagirandan
-     * elle alinmiyor - subscription-service'ten TUM ACTIVE abonelikler sayfa sayfa cekilir, her biri
-     * icin product-catalog-service'ten guncel tarife (aylik ucret + asim oranlari icin gerekli
-     * tariffCode) okunur ve InvoiceCreateRequest kendiliğinden kurulur. Asim hesaplamasi zaten
-     * InvoiceService.processNewInvoice icinde tariffCode doluysa otomatik calisir (FR-22), burada
-     * ayrica tetiklemeye gerek yok.
-     */
     public BillingRunResponse runAutomatic(BillingRunAutoRequest request) {
         List<InvoiceResponse> invoices = new ArrayList<>();
         List<SubscriptionClientDto> activeSubscriptions = fetchAllActiveSubscriptions();
 
         for (SubscriptionClientDto subscription : activeSubscriptions) {
-            TariffClientDto tariff = productCatalogServiceClient.getTariff(subscription.getTariffCode());
-            invoices.add(invoiceService.createInvoice(buildInvoiceRequest(subscription, tariff, request)));
+            invoices.add(invoiceService.createInvoice(buildInvoiceRequest(subscription, request)));
         }
 
         BillingRunResponse response = new BillingRunResponse();
@@ -93,8 +78,24 @@ public class BillingRunService {
         return all;
     }
 
-    private InvoiceCreateRequest buildInvoiceRequest(SubscriptionClientDto subscription, TariffClientDto tariff,
-                                                       BillingRunAutoRequest request) {
+    private InvoiceCreateRequest buildInvoiceRequest(SubscriptionClientDto subscription, BillingRunAutoRequest request) {
+        String name;
+        BigDecimal monthlyFee;
+        String currency;
+
+        if (subscription.getTariffVersion() != null) {
+            TariffVersionClientDto tariffVersion = productCatalogServiceClient.getTariffVersion(
+                    subscription.getTariffCode(), subscription.getTariffVersion());
+            name = tariffVersion.getName();
+            monthlyFee = tariffVersion.getMonthlyFee();
+            currency = tariffVersion.getCurrency();
+        } else {
+            TariffClientDto tariff = productCatalogServiceClient.getTariff(subscription.getTariffCode());
+            name = tariff.getName();
+            monthlyFee = tariff.getMonthlyFee();
+            currency = tariff.getCurrency();
+        }
+
         InvoiceCreateRequest invoiceRequest = new InvoiceCreateRequest();
         invoiceRequest.setCustomerId(subscription.getCustomerId());
         invoiceRequest.setSubscriptionId(subscription.getId());
@@ -102,12 +103,12 @@ public class BillingRunService {
         invoiceRequest.setPeriodStart(request.getPeriodStart());
         invoiceRequest.setPeriodEnd(request.getPeriodEnd());
         invoiceRequest.setDueDate(request.getDueDate());
-        invoiceRequest.setCurrency(tariff.getCurrency());
+        invoiceRequest.setCurrency(currency);
 
         InvoiceLineRequest monthlyFeeLine = new InvoiceLineRequest();
-        monthlyFeeLine.setDescription(tariff.getName() + " aylik ucret");
+        monthlyFeeLine.setDescription(name + " aylik ucret");
         monthlyFeeLine.setQuantity(BigDecimal.ONE);
-        monthlyFeeLine.setUnitPrice(tariff.getMonthlyFee());
+        monthlyFeeLine.setUnitPrice(monthlyFee);
         invoiceRequest.setLines(List.of(monthlyFeeLine));
 
         return invoiceRequest;

@@ -7,10 +7,6 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.stereotype.Component;
 
-/**
- * bkz. CustomerServiceGateway - ayni gerekce: fiyat sorgusu GET/idempotent oldugu icin retry guvenli,
- * FeignException.NotFound (urun yok) resilience4j'in izledigi exception listelerine dahil degil.
- */
 @Component
 public class ProductCatalogServiceGateway {
 

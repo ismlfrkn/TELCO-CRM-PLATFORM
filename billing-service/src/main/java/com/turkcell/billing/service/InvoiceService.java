@@ -31,14 +31,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * musteri/abonelik dogrulugu bu servisin sorumlulugunda degildir: subscription-service/payment-service
- * ile ayni gerekceyle, bu kontrollerin cagiran (bill-run orkestrasyonu) tarafinda yapildigi varsayilir.
- */
 @Service
 public class InvoiceService {
 
-    // MVP sadelestirmesi: BTK/vergi mevzuati detaylandirilmadigi icin tek bir sabit KDV orani kullanilir.
     private static final BigDecimal TAX_RATE = new BigDecimal("0.20");
     private static final String AGGREGATE_TYPE = "Invoice";
 
@@ -66,10 +61,6 @@ public class InvoiceService {
         this.outboxEventService = outboxEventService;
         this.productCatalogServiceClient = productCatalogServiceClient;
 
-        // REQUIRES_NEW: payment-service/usage-service'teki idempotency dersinin ucuncu uygulamasi -
-        // ayni (subscriptionId, periodStart, periodEnd) icin cift fatura kesilmesini engeller.
-        // Postgres bir statement'ta hata verince tum transaction'i "aborted" isaretledigi icin riskli
-        // insert kendi izole transaction'inda yapilir.
         this.createInvoiceTransactionTemplate = new TransactionTemplate(transactionManager);
         this.createInvoiceTransactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
     }
@@ -129,8 +120,7 @@ public class InvoiceService {
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 InvoiceLine overageLine = buildOverageLine(entry.getKey(), totalQuantity, tariff);
                 if (overageLine == null) {
-                    // Oran tanimli/pozitif degil - bu grup faturalanmaz VE claim edilmez, boylece
-                    // ileride tarifeye oran eklenirse ayni asim hala islenebilir kalir.
+
                     continue;
                 }
                 subTotal = subTotal.add(overageLine.getLineTotal());
@@ -165,26 +155,13 @@ public class InvoiceService {
         return response;
     }
 
-    /**
-     * tariffCode bos birakilirsa asim hesaplamasi tamamen atlanir (geriye donuk uyumlu - mevcut
-     * davranis degismez). Doluysa, ayni abonelik+donem icin henuz faturalanmamis (invoiceId NULL)
-     * usage_aggregates satirlari doner - period alanlari Invoice'in donemiyle birebir eslesmeli
-     * (usage-service'in Quota donemiyle bill-run'in fatura donemi ayni varsayilir).
-     */
     private List<UsageAggregate> findUnclaimedOverage(InvoiceCreateRequest request) {
         if (request.getTariffCode() == null) {
             return List.of();
         }
-        return usageAggregateRepository.findBySubscriptionIdAndPeriodStartAndPeriodEndAndInvoiceIdIsNull(
-                request.getSubscriptionId(), request.getPeriodStart(), request.getPeriodEnd());
+        return usageAggregateRepository.findBySubscriptionIdAndInvoiceIdIsNull(request.getSubscriptionId());
     }
 
-    /**
-     * Ayni donemde ayni cdrType icin birden fazla UsageAggregated event'i gelmis olabilir (orn. iki
-     * ayri CDR ayni ay icinde asima neden olmus) - tek bir birlesik satirda toplanir, faturayi
-     * gereksiz satirlarla kalabalıklastirmaz. Orijinal UsageAggregate referanslari saklanir ki
-     * hangilerinin gercekten faturalandigi (claim edildigi) sonradan belirlenebilsin.
-     */
     private Map<String, List<UsageAggregate>> groupByType(List<UsageAggregate> unclaimed) {
         return unclaimed.stream().collect(Collectors.groupingBy(UsageAggregate::getCdrType));
     }

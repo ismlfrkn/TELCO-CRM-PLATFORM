@@ -15,7 +15,7 @@ public class MsisdnPool {
     private String msisdn;
 
     @Column(nullable = false)
-    private String status; // FREE, RESERVED, ALLOCATED
+    private String status;
 
     @Column(name = "reserved_until")
     private Instant reservedUntil;

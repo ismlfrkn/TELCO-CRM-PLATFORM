@@ -14,10 +14,7 @@ for ($i = 0; $i -lt 30; $i++) {
 if (-not $up) { Write-Host "Service failed to start."; exit 1 }
 Write-Host "Service is up!"
 
-# NOT: identity-service, tum diger servisler gibi X-User-Id / X-User-Roles header'larina guvenir
-# (JWT'yi API Gateway dogrular ve bu header'lari enjekte eder). Gateway olmadan dogrudan lokal test
-# icin bu header'lari burada elle set ediyoruz - ayrica gateway ile paylasilan internal secret de
-# gerekiyor (bkz. configs/application.yaml: gateway.internal-secret), yoksa filtre header'lari yok sayar.
+
 $adminUserId = "99999999-9999-9999-9999-999999999999"
 $internalGatewaySecret = "1f4c1c771e1852984d64325c82b2604ad6d20d3b58406c61f1e47b74120a45cd"
 $adminHeaders = @{ "X-User-Id" = $adminUserId; "X-User-Roles" = "ADMIN"; "X-Internal-Gateway-Secret" = $internalGatewaySecret }

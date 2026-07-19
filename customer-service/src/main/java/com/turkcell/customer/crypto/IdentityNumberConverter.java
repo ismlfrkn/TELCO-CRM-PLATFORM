@@ -15,13 +15,6 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Base64;
 
-/**
- * TCKN/VKN alanini AES-256-GCM ile sifreler (Bolum 12: PII sifreleme zorunlulugu).
- * IV, ana anahtardan turetilen ayri bir alt-anahtarla acik metnin HMAC-SHA256'si alinarak
- * uretilir: ayni acik metin her zaman ayni ciphertext'i verir. Bu, existsByIdentityNumber
- * mukerrer kontrolunun ve DB'deki UNIQUE kisitinin sifreli kolon uzerinde calismaya devam
- * etmesi icin kasitlidir (rastgele IV kullanilsaydi esitlik sorgulari hicbir zaman eslesmezdi).
- */
 @Converter
 @Component
 public class IdentityNumberConverter implements AttributeConverter<String, String> {

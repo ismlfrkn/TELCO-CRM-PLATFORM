@@ -2,23 +2,29 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
 
-# api-gateway ile downstream servisler arasinda paylasilan internal secret.
-# Downstream servisler X-User-Id/X-User-Roles header'larina yalnizca bu secret dogruysa guvenir
-# (bkz. identity-service GatewayHeaderAuthenticationFilter). Tum servislerde ayni deger olmalidir.
-# Deger burada tutulmaz; her servis kendi sureç ortamindaki GATEWAY_INTERNAL_SECRET'tan okur
-# (bkz. .env.example, scripts/load-env.ps1). Yuklenmemisse servis "Could not resolve
-# placeholder" hatasiyla baslamaz - bu kasitlidir, sessizce zayif bir varsayilana dusmemek icin.
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+
 gateway:
   internal-secret: ${GATEWAY_INTERNAL_SECRET}
 
-# identity-service'in access token uretmek, api-gateway'in ise dogrulamak icin kullandigi ayni HMAC
-# secret (jjwt, HS256). Global tanimlanir ki iki servis de ayni degeri tek kaynaktan okusun.
-# Deger burada tutulmaz; JWT_SECRET ortam degiskeninden okunur (bkz. .env.example).
 jwt:
   secret: ${JWT_SECRET}
 

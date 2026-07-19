@@ -1,6 +1,8 @@
 package com.turkcell.productcatalog.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
@@ -15,12 +17,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
-/**
- * Bölüm 8.2: "Read-heavy servis - Redis cache yoğun kullanılır". tariffs/addons cache'leri
- * JSON serileştirir (DTO'ları Serializable yapmaya gerek kalmadan) ve product-catalog.cache.ttl-seconds
- * ile yapılandırılan bir TTL taşır - gerçek gecersiz kilma (invalidation) ise servis katmanindaki
- * @CacheEvict'ler ile yazma anında yapılır, TTL sadece kaçırılan bir evict yolu için güvenlik agi.
- */
 @Configuration
 @EnableCaching
 public class CacheConfig {
@@ -37,6 +33,13 @@ public class CacheConfig {
         ObjectMapper objectMapper = JsonMapper.builder()
                 .findAndAddModules()
                 .build();
+
+        objectMapper.activateDefaultTyping(
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType(Object.class)
+                        .build(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
         RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()

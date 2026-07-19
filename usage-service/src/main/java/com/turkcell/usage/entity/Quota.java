@@ -19,7 +19,7 @@ public class Quota {
     private UUID id;
 
     @Column(name = "subscription_id", nullable = false, unique = true)
-    private UUID subscriptionId; // subscription-service'e ait, cross-service referans (FK degil)
+    private UUID subscriptionId;
 
     @Column(name = "period_start", nullable = false)
     private LocalDate periodStart;
@@ -36,8 +36,6 @@ public class Quota {
     @Column(name = "mb_remaining", nullable = false)
     private int mbRemaining;
 
-    // ER diyagraminda yok, FR-19'daki %80/%100 esik hesabi icin eklendi: sadece "kalan" bilgisiyle
-    // "ne kadari kullanildi" orani hesaplanamaz, orijinal tanimli miktar da saklanmali.
     @Column(name = "minutes_included", nullable = false)
     private int minutesIncluded;
 

@@ -1,0 +1,144 @@
+resources:
+  - ../../base
+
+patches:
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kafka
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: kafka
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: customer-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: customer-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: product-catalog-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: product-catalog-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: order-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: order-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: subscription-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: subscription-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: usage-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: usage-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: billing-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: billing-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: payment-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: payment-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: notification-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: notification-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ticket-service
+        namespace: telco-crm
+      $patch: delete
+  - patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ticket-service
+        namespace: telco-crm
+      $patch: delete

@@ -2,10 +2,6 @@ package com.turkcell.order.client;
 
 import java.util.UUID;
 
-/**
- * customer-service'in CustomerResponse'unun order-service'in ihtiyaç duydugu alt kumesi
- * (consumer-driven contract - tum alanlari degil, sadece kullanilanlari tasir).
- */
 public class CustomerClientDto {
 
     private UUID id;
