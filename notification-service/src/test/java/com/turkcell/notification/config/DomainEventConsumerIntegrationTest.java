@@ -29,11 +29,6 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-/**
- * telco.customer.events'e ayni event_id ile IKI KEZ mesaj gonderilir (outbox pattern'in "en az bir
- * kez teslim" garantisinin dogal sonucu) - consumer'in bunu tek sefer isledigini (processed_events
- * tablosunda tek satir, MockNotificationDispatcher tek cagri) dogrular.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class DomainEventConsumerIntegrationTest {
@@ -95,7 +90,6 @@ class DomainEventConsumerIntegrationTest {
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
                 assertThat(processedEventRepository.existsByEventId(eventId)).isTrue());
 
-        // Ikinci mesajin da tuketilip elenmesi icin kisa bir ek bekleme.
         Thread.sleep(3000);
 
         assertThat(processedEventRepository.count()).isEqualTo(1);

@@ -36,42 +36,21 @@
 
     <properties>
         <java.version>21</java.version>
-        <!-- CLAUDE.md Bolum 10/11'in belgeledigi surum. -->
+
         <spring-cloud.version>2023.0.6</spring-cloud.version>
-        <!-- Boot 3.3.13'un yonettigi 1.19.8, org.testcontainers.kafka.KafkaContainer'in resmi
-             apache/kafka image'larini desteklemesi icin yetersiz (bu destek 1.20.1'de geldi).
-             1.20.4, guncel Docker Desktop surumlerinin engine API proxy'siyle npipe uzerinden
-             API version negotiation'i basarisiz oluyor (bos Info govdesiyle HTTP 400 donuyor,
-             "Could not find a valid Docker environment" hatasi); 1.21.4'teki docker-java istemcisi
-             bunu duzeltiyor. Outbox->Kafka publisher testleri icin elle override ediliyor. -->
+
         <testcontainers.version>1.21.4</testcontainers.version>
-        <!-- Her servis ayrı Swagger UI (Bölüm 11) - domain servisleri kendi pom.xml'inde
-             springdoc-openapi-starter-webmvc-ui bağımlılığını bu sürümle ekler.
-             2.7+/2.8.x, Spring Framework 6.2 (Boot 3.4+) gerektiren
-             org.springframework.web.servlet.resource.LiteWebJarsResourceResolver'a bagimli;
-             Boot 3.3.13'un yonettigi Spring Framework 6.1.21'de bu sinif yok, uygulama gercekten
-             calistirildiginda (web ortaminda) NoClassDefFoundError ile cokuyor - @SpringBootTest'in
-             WebEnvironment.NONE testleri bunu tetiklemedigi icin bu artimlist testlerde yakalanmiyordu.
-             2.6.x, Boot 3.3.x ile uyumlu son minor seri. -->
+
         <springdoc.version>2.6.0</springdoc.version>
-        <!-- Resilience4j (Bölüm 10) - circuit breaker/retry/bulkhead, order-service'in hala
-             senkron kalan Customer/Catalog dogrulama cagrilarinda kullaniliyor (bkz.
-             order-service client/gateway/*Gateway). -->
+
         <resilience4j.version>2.3.0</resilience4j.version>
-        <!-- Gozlemlenebilirlik (Bolum 5/10): JSON log -> Logstash appender'i icin. Micrometer'in
-             Prometheus registry'si ve Zipkin/Brave tracing bridge'i spring-boot-dependencies BOM'u
-             tarafindan zaten yonetiliyor, ayrica versiyon belirtmeye gerek yok - sadece bu, Boot'un
-             BOM'unda olmayan tek observability bagimliligi. -->
+
         <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- spring-cloud-dependencies, kendi ic'inde spring-cloud-circuitbreaker-dependencies:3.3.3
-                 uzerinden resilience4j-bom'u 2.2.0'a sabitliyor (RxJava3 destegi yok, 2.3.0'daki fallback
-                 autoconfig kodu RxJava3FallbackDecorator bekledigi icin context yuklenirken patlar).
-                 Maven'da import edilen BOM'lar arasinda "ilk declare edilen kazanir" kurali gecerli
-                 oldugu icin bizim 2.3.0 import'umuz BURADA, spring-cloud-dependencies'ten ONCE olmali. -->
+
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-bom</artifactId>
@@ -90,16 +69,12 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Tüm servislerde ortak kullanacağımız dependency -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Gozlemlenebilirlik (Bolum 5/10) - tum servislerde ortak, docker-compose'daki
-             Prometheus/Zipkin/ELK yigininin gercekten veri alabilmesi icin. management.endpoints
-             expose (prometheus) ve management.tracing/zipkin ayarlari configs/application.yaml'da
-             (config-server uzerinden paylasilan global config). -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
@@ -118,14 +93,12 @@
             <version>${logstash-logback-encoder.version}</version>
         </dependency>
 
-        <!-- Test dependency'si tüm modüller tarafından kullanılabilir -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- Geliştirme kolaylığı için -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>

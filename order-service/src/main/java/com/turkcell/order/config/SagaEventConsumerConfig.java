@@ -23,19 +23,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-/**
- * Saga'nin devamini CLAUDE.md Bolum 8.2'deki choreography'e gore yuruten fonksiyonel Consumer<T>
- * bean'leri:
- *  - paymentEvents: PaymentCompleted -> odeme tamam, tarife item'i yoksa (sadece ADDON siparisi)
- *    dogrudan FULFILLED'a gecer; tarife item'i varsa PAID'de bekleyip subscriptionEvents'i bekler.
- *    PaymentFailed -> siparis iptal edilir.
- *  - subscriptionEvents: SubscriptionActivated -> FULFILLED. SubscriptionActivationFailed
- *    (kompansasyon) -> CANCELLED (payment-service ayni event'i bagimsiz olarak tuketip refund
- *    tetikler, burada ona referans/bekleme yok - gercek choreography).
- * Her iki consumer da siparisin BEKLENEN durumda olup olmadigini kontrol eder (PENDING_PAYMENT /
- * PAID) - bu, en-az-bir-kez teslim nedeniyle gelebilecek yinelenen event'lerin bir gecisi asamayi
- * tekrar tetiklemesini engeller (idempotent tuketim).
- */
 @Configuration
 public class SagaEventConsumerConfig {
 
@@ -130,8 +117,7 @@ public class SagaEventConsumerConfig {
         List<OrderItem> items = orderItemRepository.findAllByOrderId(orderId);
         boolean hasTariffItem = items.stream().anyMatch(item -> "TARIFF".equals(item.getProductType()));
         if (!hasTariffItem) {
-            // Sadece ADDON iceren siparisler icin subscription-service hicbir zaman event uretmez
-            // (bkz. subscription-service SagaEventConsumerConfig) - odeme tamamlaninca dogrudan FULFILLED.
+
             orderPersistenceService.markOrderFulfilled(orderId);
             publishOrderEvent(orderId, "OrderConfirmed");
         }

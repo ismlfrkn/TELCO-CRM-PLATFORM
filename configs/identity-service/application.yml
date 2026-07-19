@@ -30,8 +30,6 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
 
-# jwt.secret configs/application.yaml (global) icinde tanimlidir; burada sadece bu servise
-# ozel token sureleri kalir.
 jwt:
-  access-token-expiration: 900000 # 15 minutes in ms
-  refresh-token-expiration: 86400000 # 1 day in ms
+  access-token-expiration: 900000
+  refresh-token-expiration: 86400000

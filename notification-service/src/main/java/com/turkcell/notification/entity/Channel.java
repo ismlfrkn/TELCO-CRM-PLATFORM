@@ -18,7 +18,7 @@ public class Channel {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private String code; // SMS, EMAIL, PUSH
+    private String code;
 
     @Column
     private String description;

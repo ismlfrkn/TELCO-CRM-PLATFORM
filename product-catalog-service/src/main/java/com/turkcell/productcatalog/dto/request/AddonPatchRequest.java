@@ -11,7 +11,6 @@ public class AddonPatchRequest {
     private String currency;
     private String status;
 
-    // Getters and Setters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

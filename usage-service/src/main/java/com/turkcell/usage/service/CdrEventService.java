@@ -21,14 +21,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/**
- * FR-17: CDR akisi iki giris noktasindan da tuketilebilir - REST (CdrEventController, simulator'in
- * dogrudan cagirabilecegi senkron yol) ve Kafka (CdrEventConsumerConfig, telco.cdr.events'ten
- * CdrRecorded event'i). Ikisi de ayni ingest(...) metodunu paylasir. Gercek dunyada CDR teslimati
- * en-az-bir-kez (at-least-once) oldugu icin ayni externalCdrId birden fazla gelebilir -
- * payment-service'teki Idempotency-Key ile ayni sinif problem, ayni cozum kullanilir (bkz. asagidaki
- * REQUIRES_NEW transaction gerekcesi).
- */
 @Service
 public class CdrEventService {
 
@@ -57,9 +49,6 @@ public class CdrEventService {
         this.outboxEventService = outboxEventService;
         this.auditLogService = auditLogService;
 
-        // REQUIRES_NEW: payment-service'teki idempotency hatasindan cikan ayni ders - Postgres bir
-        // statement'ta hata verince tum transaction'i "aborted" isaretler, ayni transaction icindeki
-        // fallback SELECT calismaz. Riskli insert kendi izole transaction'inda yapilir.
         this.ingestTransactionTemplate = new TransactionTemplate(transactionManager);
         this.ingestTransactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
     }
@@ -133,7 +122,7 @@ public class CdrEventService {
         return switch (cdrType) {
             case "VOICE" -> {
                 int seconds = durationSeconds != null ? durationSeconds : 0;
-                yield BigDecimal.valueOf((seconds + 59) / 60); // yukari yuvarlanmis dakika
+                yield BigDecimal.valueOf((seconds + 59) / 60);
             }
             case "SMS" -> BigDecimal.ONE;
             case "DATA" -> {

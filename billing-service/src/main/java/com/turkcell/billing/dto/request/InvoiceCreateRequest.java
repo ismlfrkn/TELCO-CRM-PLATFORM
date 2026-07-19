@@ -25,13 +25,8 @@ public class InvoiceCreateRequest {
     @NotNull(message = "Due date cannot be null")
     private LocalDate dueDate;
 
-    // Bos birakilirsa Invoice.prePersist varsayilan olarak "TRY" atar (Wallet/Payment ile ayni pattern).
     private String currency;
 
-    // Opsiyonel: doluysa, bu abonelik+donem icin henuz faturalanmamis (usage_aggregates'te invoice_id
-    // NULL olan) asim kayitlari bu tarifenin guncel oranlariyla (product-catalog-service'ten senkron
-    // cekilir) fiyatlandirilip ek InvoiceLine olarak eklenir. Bos birakilirsa asim hesaplamasi atlanir
-    // - mevcut (asim-siz) davranis degismez.
     private String tariffCode;
 
     @NotEmpty(message = "At least one invoice line is required")

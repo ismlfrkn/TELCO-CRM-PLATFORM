@@ -16,12 +16,6 @@ public interface QuotaRepository extends JpaRepository<Quota, UUID> {
 
     Optional<Quota> findBySubscriptionId(UUID subscriptionId);
 
-    /**
-     * Ayni aboneligin kotasina eszamanli birden fazla CDR dusme istegi gelirse (ornegin ayni anda
-     * biten iki cagri), PESSIMISTIC_WRITE bu satiri kilitleyip digerlerini BEKLETIR - Wallet'taki
-     * bakiye dususuyle ayni gerekce (MsisdnPool'daki SKIP LOCKED'in aksine burada "bekle" gerekir,
-     * cunku hepsi ayni satiri guncellemek zorunda, "baskasini al" secenegi yok).
-     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT q FROM Quota q WHERE q.subscriptionId = :subscriptionId")
     Optional<Quota> findBySubscriptionIdForUpdate(@Param("subscriptionId") UUID subscriptionId);

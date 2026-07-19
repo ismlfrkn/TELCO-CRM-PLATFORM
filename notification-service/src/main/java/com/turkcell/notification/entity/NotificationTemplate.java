@@ -27,7 +27,7 @@ public class NotificationTemplate {
     private String locale;
 
     @Column
-    private String subject; // EMAIL icin kullanilir, SMS/PUSH icin bos birakilabilir
+    private String subject;
 
     @Column(name = "body_template", columnDefinition = "TEXT", nullable = false)
     private String bodyTemplate;

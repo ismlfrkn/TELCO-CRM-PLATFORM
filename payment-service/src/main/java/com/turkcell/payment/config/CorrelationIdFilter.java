@@ -13,11 +13,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
-/**
- * Spring Security filter zinciri varsayilan olarak bu filtreden once calisir; auth reddi (401/403)
- * durumunda istek buraya hic ulasmadan kesilirse MDC hic doldurulmamis olur - bu yuzden en yuksek
- * onceligi alir (bkz. identity-service/subscription-service CorrelationIdFilter ile ayni gerekce).
- */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {

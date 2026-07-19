@@ -13,11 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-/**
- * FR-23: fatura PDF olarak uretilir. Gercek bir sablon motoru yerine PDFBox ile basit, duz metin
- * tabanli bir duzen kullanilir - MVP'nin amaci gercek bir fatura tasarim sistemi degil, PDF uretim
- * yetkinligini kanitlamak.
- */
 @Service
 public class InvoicePdfService {
 

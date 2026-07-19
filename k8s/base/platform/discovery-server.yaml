@@ -15,8 +15,6 @@ spec:
     spec:
       containers:
         - name: discovery-server
-          # Logical image adi - kustomization.yaml'daki "images:" transformer'i gercek
-          # registry/repo/tag ile degistirir (bkz. kustomization.yaml yorumlari).
           image: telco-discovery-server:latest
           ports:
             - containerPort: 8761

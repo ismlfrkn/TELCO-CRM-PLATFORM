@@ -30,12 +30,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * outbox_events tablosuna yazilan bir satirin OutboxEventPublisher tarafindan gercek bir Kafka
- * broker'a (Testcontainers, docker-compose.yml'deki ile ayni apache/kafka:3.7.0 image'i) basildigini
- * ve satirin PUBLISHED'e cevrildigini dogrular. Mockito ile simule edilemeyecek gercek serileştirme +
- * ag katmani buradan gecer.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class OutboxEventPublisherIntegrationTest {

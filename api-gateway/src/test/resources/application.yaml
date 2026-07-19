@@ -7,9 +7,6 @@ eureka:
   client:
     enabled: false
 
-# JwtAuthenticationGlobalFilter constructor'i HexFormat.parseHex(jwt.secret) cagirir; config-server
-# devrede olmadan (bu basit context-load testinde) bu deger bos kalirsa NPE atar. Gercek deger degil,
-# sadece gecerli bir hex string olmasi yeterli.
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
 

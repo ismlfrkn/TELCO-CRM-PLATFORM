@@ -12,9 +12,5 @@ public interface UsageAggregateRepository extends JpaRepository<UsageAggregate, 
 
     boolean existsBySourceEventId(UUID sourceEventId);
 
-    // invoiceId IS NULL zaten tek basina dogru "henuz faturalanmadi" korumasi (bkz. UsageAggregate
-    // javadoc'u) - periodStart/periodEnd'i de bill-run'in cagirandan gelen (ve genellikle bu
-    // aboneligin kendi Quota donemiyle hicbir iliskisi olmayan) degerleriyle birebir eslestirmek
-    // sadece kirilgan, sessizce basarisiz olan bir ek sart ekliyordu (bkz. InvoiceService).
     List<UsageAggregate> findBySubscriptionIdAndInvoiceIdIsNull(UUID subscriptionId);
 }

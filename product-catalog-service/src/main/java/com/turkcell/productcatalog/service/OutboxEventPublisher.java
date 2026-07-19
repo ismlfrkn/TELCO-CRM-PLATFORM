@@ -20,11 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * outbox_events tablosundaki PENDING satirlari periyodik tarayip StreamBridge ile Kafka'ya gonderir.
- * Basarili gonderim satiri PUBLISHED'e cevirir; basarisizlikta retry_count artar, MAX_RETRY_COUNT'u
- * asinca satir FAILED'e dusup otomatik denenmeyi durdurur (zehirli mesajin batch'i bloke etmemesi icin).
- */
 @Service
 public class OutboxEventPublisher {
 
@@ -58,8 +53,7 @@ public class OutboxEventPublisher {
 
     private void publishOne(OutboxEvent event) {
         try {
-            // Kafka binder'in varsayilan key.serializer'i ByteArraySerializer - String key vermek
-            // ClassCastException'a yol acar, key'i elle byte[]'e ceviriyoruz.
+
             Message<Map<String, Object>> message = MessageBuilder
                     .withPayload(buildEnvelope(event))
                     .setHeader(KafkaHeaders.KEY, event.getAggregateId().toString().getBytes(StandardCharsets.UTF_8))

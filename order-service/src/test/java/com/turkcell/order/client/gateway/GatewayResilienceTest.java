@@ -27,14 +27,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/**
- * order-service'in hala senkron kalan Customer/Catalog dogrulama cagrilarina (Bolum 9.2) eklenen
- * circuit breaker + retry wiring'inin GERCEKTEN devrede oldugunu dogrular - resilience4j
- * kutuphanesinin kendi mantigini degil, bu projedeki configs/order-service/application.yml +
- * @CircuitBreaker/@Retry kablolamasinin dogrulugunu test eder. Subscription dogrulamasi artik
- * senkron Feign degil (bkz. OrderService.initiateSaga - Kafka choreography), bu yuzden
- * SubscriptionServiceGateway icin devre acilma senaryosu burada yok.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class GatewayResilienceTest {
@@ -94,8 +86,6 @@ class GatewayResilienceTest {
         assertThatThrownBy(() -> productCatalogServiceGateway.getTariff("MISSING"))
                 .isInstanceOf(FeignException.NotFound.class);
 
-        // FeignException.NotFound retryExceptions/recordExceptions listelerinde olmadigi icin
-        // tek bir denemeyle dogrudan cagirana ulasmali - retry donguleri tetiklenmemeli.
         verify(productCatalogServiceClient, times(1)).getTariff("MISSING");
     }
 

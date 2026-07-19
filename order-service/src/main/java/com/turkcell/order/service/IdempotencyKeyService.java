@@ -18,18 +18,6 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Optional;
 
-/**
- * payment-service (Idempotency-Key), usage-service (externalCdrId) ve billing-service
- * (subscriptionId+periyot) ile ayni temel ders, ama burada dokumandaki IdempotencyKey tablosu genel
- * amacli oldugu icin (tam HTTP response'u onbelleklemek) bir adim daha ileri gidiyor: "claim" deseni.
- *
- * Onceki 3 uygulamada riskli INSERT is mantiginin SONUNDA yapiliyordu (once is islenir, sonra
- * benzersizlik kaydi eklenir) - bu Order icin YETERSIZ olurdu, cunku iki eszamanli istek ikisi de
- * "kayit yok" gorup saga'yi TAMAMEN calistirabilir (cift odeme + cift abonelik!) once herhangi biri
- * benzersizlik kontrolune ulasmadan. Bu yuzden burada anahtar saga BASLAMADAN ONCE "claim" edilir
- * (bos bir response_snapshot ile eklenir); sadece claim'i kazanan taraf saga'yi calistirir, digerleri
- * ya tamamlanmis cevabi ya da "hala isleniyor" hatasini alir.
- */
 @Service
 public class IdempotencyKeyService {
 
@@ -57,11 +45,6 @@ public class IdempotencyKeyService {
         }
     }
 
-    /**
-     * Bos Optional donerse: anahtar basariyla claim edildi, cagiran saga'yi calistirabilir ve
-     * sonunda {@link #complete} cagirmalidir. Dolu Optional donerse: baskasi zaten bu anahtari
-     * kullanmis/kullaniyor - saga TEKRAR calistirilmamalidir.
-     */
     public <T> Optional<T> tryClaim(String key, String requestHash, Class<T> responseType) {
         Optional<IdempotencyKey> existing = idempotencyKeyRepository.findById(key);
         if (existing.isPresent()) {

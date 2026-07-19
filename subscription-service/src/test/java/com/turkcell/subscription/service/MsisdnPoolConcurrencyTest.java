@@ -17,11 +17,6 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Mockito ile FOR UPDATE SKIP LOCKED'in gercekten calistigini kanitlayamayiz - o sadece Postgres'in
- * kendi kilitleme davranisi. Bu yuzden bu test gercek bir Postgres container'ina karsi, ayni anda
- * cok sayida allocateNext() cagirip hicbir MSISDN'in iki abonelige birden verilmedigini dogrular.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers
 class MsisdnPoolConcurrencyTest {
@@ -47,7 +42,7 @@ class MsisdnPoolConcurrencyTest {
 
     @Test
     void allocateNext_underConcurrentRequests_neverAllocatesSameMsisdnTwice() throws Exception {
-        int concurrentRequests = 20; // V2 migration havuza 200 FREE numara seed'ler, yeterli
+        int concurrentRequests = 20;
         ExecutorService executor = Executors.newFixedThreadPool(concurrentRequests);
         CountDownLatch allThreadsReady = new CountDownLatch(concurrentRequests);
         CountDownLatch startSignal = new CountDownLatch(1);
@@ -62,7 +57,7 @@ class MsisdnPoolConcurrencyTest {
         }
 
         allThreadsReady.await(5, TimeUnit.SECONDS);
-        startSignal.countDown(); // hepsini ayni anda serbest birak
+        startSignal.countDown();
 
         Set<String> allocatedNumbers = new HashSet<>();
         for (Future<String> future : futures) {

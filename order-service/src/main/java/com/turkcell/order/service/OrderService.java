@@ -27,14 +27,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * CLAUDE.md Bolum 8.2'deki choreography'e gore: bu servis artik siparisi olusturup OrderCreated
- * yayinlamaktan sorumludur, odeme/abonelik adimlarini SENKRON olarak beklemez. Saga'nin devami
- * (PaymentCompleted/PaymentFailed, SubscriptionActivated/SubscriptionActivationFailed)
- * SagaEventConsumerConfig icindeki fonksiyonel Consumer<T> bean'leri tarafindan asenkron olarak
- * yurutulur. Musteri/urun dogrulama adimlari dokumanin 9.1 bolumune gore hala SENKRON REST (bunlara
- * dokunulmadi).
- */
 @Service
 public class OrderService {
 
@@ -76,11 +68,6 @@ public class OrderService {
         return response;
     }
 
-    /**
-     * Saga'nin sadece ILK adimini yurutur: siparisi PENDING_PAYMENT olarak kaydeder ve OrderCreated'i
-     * yayinlar. Cagiran (HTTP client) siparisin PENDING_PAYMENT durumuyla aninda cevap alir; odemenin
-     * tamamlanip tamamlanmadigini GET /orders/{id} ile ayrica sorgular (asenkron akisin dogal sonucu).
-     */
     private OrderResponse initiateSaga(OrderCreateRequest request) {
         validateCustomerExists(request.getCustomerId());
         List<OrderItem> items = resolveItems(request.getItems());
@@ -103,11 +90,6 @@ public class OrderService {
         return orderRepository.findAllByCustomerId(customerId, pageable).map(this::toOrderResponse);
     }
 
-    /**
-     * Musteri/CSR tarafindan manuel tetiklenen iptal (FR-12) - saga basarisizliginda otomatik
-     * tetiklenen kompansasyondan (bkz. SagaEventConsumerConfig) farkli bir yol. Zaten tamamlanmis
-     * (FULFILLED) ya da iptal edilmis siparisler tekrar iptal edilemez.
-     */
     public OrderResponse cancelOrder(UUID id) {
         Order order = getOrderById(id);
         if (Order.STATUS_FULFILLED.equals(order.getStatus()) || Order.STATUS_CANCELLED.equals(order.getStatus())) {

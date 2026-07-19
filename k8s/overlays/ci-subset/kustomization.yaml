@@ -1,13 +1,3 @@
-# CI'in ilk fazinda (bkz. .github/workflows/ci-cd.yml "k8s-deploy-check" job'u) sadece kritik
-# bagimlilik zincirini dogrulamak icin tam k8s/ base'ini alip Kafka'ya bagimli 9 domain servisini
-# ($patch: delete ile) cikartir. Geriye kalan: postgres, redis, discovery-server, config-server,
-# api-gateway, identity-service. identity-service, Kafka'ya hic bagimli olmayan TEK domain
-# servisi oldugu icin secildi - Eureka/Config/Gateway/JWT/DB zincirini Kafka'siz dogrulamaya yetiyor.
-# ConfigMap'lerin tamami (config-server'in projected volume'u hepsini bekliyor) base'ten oldugu
-# gibi kalir - sadece Deployment/Service'ler siliniyor, ConfigMap'ler ucuz oldugu icin dokunulmuyor.
-#
-# Faz 2'de (kalan 7 servis + Kafka de CI'a eklenince) bu overlay tamamen kaldirilip
-# CI dogrudan ../../ (k8s/ base) kullanacak sekilde guncellenmeli.
 resources:
   - ../../base
 

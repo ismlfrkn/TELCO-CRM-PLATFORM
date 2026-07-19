@@ -27,7 +27,7 @@ public class Order {
     private UUID id;
 
     @Column(name = "customer_id", nullable = false)
-    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+    private UUID customerId;
 
     @Column(nullable = false)
     private String status;

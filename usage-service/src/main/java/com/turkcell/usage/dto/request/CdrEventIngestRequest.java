@@ -11,10 +11,6 @@ public class CdrEventIngestRequest {
     @NotBlank(message = "External CDR id cannot be blank")
     private String externalCdrId;
 
-    // CdrEvent entity'sinde saklanmaz (ER diyagraminda yok); sadece bu istek icinde dogru quota'ya
-    // yonlendirmek icin kullanilir - tipki subscription-service/payment-service'in customerId/tariffCode'u
-    // caginin zaten dogruladigini varsaymasi gibi, msisdn -> subscriptionId eslesmesinin cagiran
-    // tarafindan (CDR mediation / simulator) zaten yapildigi varsayilir.
     @NotNull(message = "Subscription id cannot be null")
     private UUID subscriptionId;
 
@@ -22,7 +18,7 @@ public class CdrEventIngestRequest {
     private String msisdn;
 
     @NotBlank(message = "Cdr type cannot be blank")
-    private String cdrType; // VOICE, SMS, DATA
+    private String cdrType;
 
     @NotNull(message = "Start time cannot be null")
     private Instant startTime;

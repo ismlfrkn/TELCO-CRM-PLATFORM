@@ -122,7 +122,7 @@ class TariffServiceTest {
 
     @Test
     void updateTariff_whenMonthlyFeeChanges_publishesTariffPriceChanged() {
-        Tariff tariff = existingTariff(); // monthlyFee = 150.00
+        Tariff tariff = existingTariff();
         when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
 
         TariffUpdateRequest request = new TariffUpdateRequest();
@@ -142,13 +142,13 @@ class TariffServiceTest {
 
     @Test
     void updateTariff_whenMonthlyFeeUnchanged_publishesTariffUpdated() {
-        Tariff tariff = existingTariff(); // monthlyFee = 150.00
+        Tariff tariff = existingTariff();
         when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
 
         TariffUpdateRequest request = new TariffUpdateRequest();
         request.setName("Renamed Tariff");
         request.setType("POSTPAID");
-        request.setMonthlyFee(new BigDecimal("150.00")); // ayni fiyat
+        request.setMonthlyFee(new BigDecimal("150.00"));
         request.setStatus("ACTIVE");
         request.setCurrency("TRY");
 
@@ -160,7 +160,7 @@ class TariffServiceTest {
 
     @Test
     void patchTariff_whenMonthlyFeeChanges_publishesTariffPriceChanged() {
-        Tariff tariff = existingTariff(); // monthlyFee = 150.00
+        Tariff tariff = existingTariff();
         when(tariffRepository.findByCodeAndStatusNot("TRF-001", "INACTIVE")).thenReturn(Optional.of(tariff));
 
         TariffPatchRequest request = new TariffPatchRequest();
@@ -183,7 +183,7 @@ class TariffServiceTest {
         TariffResponse response = tariffService.patchTariff("TRF-001", request);
 
         assertThat(response.getName()).isEqualTo("Patched Name");
-        assertThat(response.getMonthlyFee()).isEqualByComparingTo("150.00"); // degismedi
+        assertThat(response.getMonthlyFee()).isEqualByComparingTo("150.00");
         verify(outboxEventService).publish(eq("Tariff"), eq(tariff.getId()), eq("TariffUpdated"), any());
     }
 
@@ -198,9 +198,9 @@ class TariffServiceTest {
         TariffResponse response = tariffService.patchTariff("TRF-001", request);
 
         assertThat(response.getOverageRatePerMinute()).isEqualByComparingTo("0.50");
-        assertThat(response.getOverageRateSms()).isEqualByComparingTo(BigDecimal.ZERO); // degismedi
-        assertThat(response.getOverageRatePerMb()).isEqualByComparingTo(BigDecimal.ZERO); // degismedi
-        assertThat(response.getName()).isEqualTo("Super Tariff"); // degismedi
+        assertThat(response.getOverageRateSms()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getOverageRatePerMb()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getName()).isEqualTo("Super Tariff");
     }
 
     @Test
@@ -248,8 +248,8 @@ class TariffServiceTest {
         verify(tariffVersionRepository).save(captor.capture());
         TariffVersion archived = captor.getValue();
         assertThat(archived.getVersion()).isEqualTo(1);
-        assertThat(archived.getName()).isEqualTo("Super Tariff"); // guncellemeden ONCEKI isim
-        assertThat(archived.getMonthlyFee()).isEqualByComparingTo("150.00"); // guncellemeden ONCEKI ucret
+        assertThat(archived.getName()).isEqualTo("Super Tariff");
+        assertThat(archived.getMonthlyFee()).isEqualByComparingTo("150.00");
     }
 
     @Test

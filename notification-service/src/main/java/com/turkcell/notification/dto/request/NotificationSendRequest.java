@@ -19,7 +19,6 @@ public class NotificationSendRequest {
 
     private String locale = "tr-TR";
 
-    // Sablondaki {{placeholder}} alanlarini doldurmak icin kullanilir, ayrica payloadJson olarak saklanir.
     private Map<String, String> payload;
 
     public UUID getUserId() { return userId; }

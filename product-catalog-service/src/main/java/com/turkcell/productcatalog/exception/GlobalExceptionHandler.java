@@ -65,12 +65,12 @@ public class GlobalExceptionHandler {
         problem.setType(URI.create("https://telco.example/errors/malformed-request"));
         problem.setTitle("Malformed request body");
         problem.setInstance(URI.create(request.getRequestURI()));
-        
+
         String correlationId = MDC.get("correlationId");
         if (correlationId != null) {
             problem.setProperty("correlationId", correlationId);
         }
-        
+
         return problem;
     }
 
@@ -79,7 +79,7 @@ public class GlobalExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed for one or more fields");
         problemDetail.setType(URI.create("https://telco.example/errors/validation-failed"));
         problemDetail.setTitle("Validation Failed");
-        
+
         Map<String, String> errors = new HashMap<>();
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
@@ -91,9 +91,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
-        // Not: @PreAuthorize reddi (method-security), Spring Security'nin filter-chain seviyesindeki
-        // AccessDeniedHandler'ini degil, buradaki handler'i tetikler - cunku istek DispatcherServlet'e
-        // zaten ulasmis, hata controller metod cagrisi sirasinda firlatiliyor.
+
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You do not have permission to perform this action");
         problemDetail.setType(URI.create("https://telco.example/errors/access-denied"));
         problemDetail.setTitle("Access denied");

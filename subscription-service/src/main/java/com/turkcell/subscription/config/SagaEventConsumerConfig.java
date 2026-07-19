@@ -18,13 +18,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
- * Order->Subscription aktivasyonu CLAUDE.md Bolum 8.2'deki choreography'e gore fonksiyonel
- * Consumer<T> bean'i ile calisir: sadece PaymentCompleted'e tepki verir (PaymentFailed order-service'in
- * dogrudan ilgilendigi bir konu, subscription-service'i ilgilendirmez). Aktivasyon basarisiz olursa
- * (orn. MSISDN havuzu tukendi) SubscriptionActivationFailed yayinlanir - bu hem payment-service'teki
- * refund kompansasyonunu hem de order-service'teki OrderCancelled'i bagimsiz olarak tetikler.
- */
 @Configuration
 public class SagaEventConsumerConfig {
 
@@ -82,14 +75,6 @@ public class SagaEventConsumerConfig {
         };
     }
 
-    /**
-     * FR-08: abonelik, o anda GECERLI olan tarife versiyonuna pinlenir - product-catalog-service
-     * tarifenin fiyatini/paketini daha sonra guncellese bile bu abonelik faturalanirken
-     * (billing-service) bu versiyonun donmus degerleri kullanilir, guncel fiyat degil.
-     * product-catalog-service'e ulasilamazsa hata yukari firlar ve mevcut catch bloğu bunu da
-     * diger aktivasyon hatalari gibi SubscriptionActivationFailed'e cevirir - versiyonu bilinmeyen
-     * bir abonelik yanlislikla ACTIVE'e dusmez.
-     */
     private int resolveTariffVersion(String tariffCode) {
         TariffClientDto tariff = productCatalogServiceClient.getTariff(tariffCode);
         return tariff.getVersion();
@@ -101,8 +86,7 @@ public class SagaEventConsumerConfig {
         payload.put("customerId", customerId.toString());
         payload.put("tariffCode", tariffCode);
         payload.put("reason", reason);
-        // aggregateId olarak orderId kullanilir - bu basarisizlikta olusmus bir Subscription yok,
-        // ama tuketicilerin (payment-service, order-service) korele edecegi tek ortak kimlik orderId.
+
         outboxEventService.publish(AGGREGATE_TYPE, orderId, "SubscriptionActivationFailed", payload);
     }
 

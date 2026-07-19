@@ -19,7 +19,7 @@ public class BillCycle {
     private UUID id;
 
     @Column(name = "customer_id", nullable = false, unique = true)
-    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+    private UUID customerId;
 
     @Column(name = "day_of_month", nullable = false)
     private int dayOfMonth;

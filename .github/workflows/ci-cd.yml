@@ -60,12 +60,6 @@ jobs:
               .
           done
 
-  # CLAUDE.md Bolum 10/15 hedef akisi: "Build -> test -> docker push -> kubectl apply".
-  # Bu job'un cluster'i (Kind) runner uzerinde efemer olarak kurulup is bitince atilir - kullanicinin
-  # kendi Minikube/Kind'ina degil, sadece k8s/ manifestlerinin gercekten deploy edilebilir oldugunu
-  # dogrular. Ilk faz: sadece Kafka'ya bagimli olmayan kritik zincir (postgres, redis, discovery-server,
-  # config-server, api-gateway, identity-service) - bkz. k8s/overlays/ci-subset/kustomization.yaml
-  # yorumlari. Kalan 7 domain servisi + Kafka, bu ilk faz guvenilir calistiktan sonra eklenecek.
   k8s-deploy-check:
     name: K8s Deploy Check (Kind, critical services)
     runs-on: ubuntu-latest

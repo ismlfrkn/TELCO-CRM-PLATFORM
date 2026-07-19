@@ -48,11 +48,6 @@ public class BillCycleService {
                 .orElseThrow(() -> new BillCycleNotFoundException("Bill cycle not found for customer: " + customerId));
     }
 
-    /**
-     * Bir faturalama donemi basariyla islendiginde bir sonraki calisma tarihini bir ay ileri tasir.
-     * BillCycle yoksa (musteri henuz kayitli degilse) sessizce atlanir - bill-run'in devam etmesi
-     * bu abonelige BillCycle atanmis olmasina bagli degildir.
-     */
     @Transactional
     public void advanceIfExists(UUID customerId) {
         billCycleRepository.findByCustomerId(customerId).ifPresent(billCycle -> {

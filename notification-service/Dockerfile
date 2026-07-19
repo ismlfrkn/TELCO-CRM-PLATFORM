@@ -1,6 +1,4 @@
 # syntax=docker/dockerfile:1
-# CLAUDE.md Bolum 15: root pom.xml'in <modules> reactor'u tum 13 servisi gorur, bu yuzden build
-# context repo koku olmali ve her modulun pom.xml'i (sadece bu servisin src'i degil) kopyalanmalidir.
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 

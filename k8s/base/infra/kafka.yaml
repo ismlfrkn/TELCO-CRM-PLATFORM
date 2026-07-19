@@ -24,8 +24,6 @@ spec:
             - { name: KAFKA_NODE_ID, value: "1" }
             - { name: KAFKA_PROCESS_ROLES, value: "broker,controller" }
             - { name: KAFKA_CONTROLLER_QUORUM_VOTERS, value: "1@kafka:9093" }
-            # docker-compose'daki EXTERNAL listener (host makineden erisim icin) K8s'te gerekmiyor -
-            # kume disindan Kafka'ya erisen tek arac (cdr-simulator vb.) gateway uzerinden HTTP kullaniyor.
             - { name: KAFKA_LISTENERS, value: "INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093" }
             - { name: KAFKA_ADVERTISED_LISTENERS, value: "INTERNAL://kafka:29092" }
             - { name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP, value: "INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT" }
@@ -36,18 +34,8 @@ spec:
             - { name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR, value: "1" }
             - { name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS, value: "0" }
           resources:
-            # cpu request bilerek diger servislerden yuksek tutuluyor: KRaft controller
-            # registration'i node CPU acligi altinda timeout'a dusup CrashLoopBackOff'a giriyor -
-            # yuksek request, contention altinda Kafka'ya orantili olarak daha fazla CPU zamani
-            # ayrilmasini saglar (Linux CFS cpu.shares).
             requests: { memory: "480Mi", cpu: "300m" }
             limits: { memory: "640Mi", cpu: "500m" }
-          # "kafka-broker-api-versions.sh" (docker-compose'daki orijinal healthcheck) her
-          # calistiginda yeni bir JVM subprocess baslatiyor - CPU baskisi altinda bu baslatma
-          # suresinin kendisi 10s'yi asip probe'u "unhealthy" gosteriyor, kubelet de (compose'daki
-          # healthcheck'in aksine) bunu container'i OLDURUP yeniden baslatarak cezalandiriyor -
-          # yani probe kendi olcumu icin yarattigi CPU yukuyle kendini yanlis pozitif yapiyor.
-          # Hafif bir tcpSocket probe'u ayni sinyali JVM baslatmadan verir.
           readinessProbe:
             tcpSocket: { port: 29092 }
             initialDelaySeconds: 20
@@ -69,13 +57,6 @@ metadata:
 spec:
   selector:
     app: kafka
-  # KRaft'ta bu pod hem broker hem controller - kendi controller kaydini tamamlamak icin
-  # "kafka:9093" Service adresi uzerinden KENDINE baglanmasi gerekiyor. K8s Service'leri
-  # varsayilan olarak sadece readinessProbe'u gecmis pod'lari Endpoints'e dahil eder, ama bu
-  # pod readinessProbe'u kayit tamamlanmadan gecemiyor -> deadlock (CrashLoopBackOff).
-  # publishNotReadyAddresses, henuz Ready olmamis pod'un da DNS/Endpoints'te gorunmesini
-  # saglayarak bu tavuk-yumurta durumunu kirar (Kafka/ZooKeeper gibi kendine referans veren
-  # sistemler icin bilinen standart K8s pattern'i).
   publishNotReadyAddresses: true
   ports:
     - name: internal

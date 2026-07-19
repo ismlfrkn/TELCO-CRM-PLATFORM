@@ -9,27 +9,21 @@ import java.util.UUID;
 
 public class PaymentCreateRequest {
 
-    // Siparis anindaki (aktivasyon ucreti gibi) odemelerde bos birakilir - fatura henuz kesilmemistir.
     private UUID invoiceId;
 
     @NotNull(message = "Amount cannot be null")
     @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
     private BigDecimal amount;
 
-    // Bos birakilirsa Payment.prePersist varsayilan olarak "TRY" atar (Wallet/Order ile ayni pattern).
     private String currency;
 
     @NotBlank(message = "Method cannot be blank")
-    private String method; // CARD, BANK_TRANSFER, WALLET
+    private String method;
 
-    // method=WALLET oldugunda zorunlu, diger yontemlerde yok sayilir
     private UUID walletId;
 
-    // Gercek bir PSP entegrasyonu olmadigi icin test amacli: true ise mock PSP odemeyi reddeder.
     private boolean simulateFailure;
 
-    // Sadece order-service'ten tuketilen OrderCreated event'i uzerinden gelen odemelerde dolu -
-    // saga korelasyon verisi, REST uzerinden dogrudan cagrilan odemelerde bos kalir.
     private UUID orderId;
     private UUID customerId;
     private String tariffCode;

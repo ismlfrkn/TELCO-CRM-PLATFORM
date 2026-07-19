@@ -39,8 +39,7 @@ class ProductOfferingServiceTest {
         tariffService = mock(TariffService.class);
         outboxEventService = mock(OutboxEventService.class);
         ProductOfferingMapper mapper = Mappers.getMapper(ProductOfferingMapper.class);
-        // ProductOfferingMapper "uses = {TariffMapper.class}" ile @Autowired field injection bekliyor;
-        // Mappers.getMapper() bunu Spring context'i olmadan doldurmuyor, bu yuzden testte elle veriyoruz.
+
         ReflectionTestUtils.setField(mapper, "tariffMapper", Mappers.getMapper(TariffMapper.class));
         productOfferingService = new ProductOfferingService(productOfferingRepository, tariffService, mapper,
                 outboxEventService);

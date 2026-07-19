@@ -19,13 +19,6 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
- * FR-17/18/19: usage-service'in kota takibi yapabilmesi icin, bir abonelik aktive oldugunda
- * o aboneligin Quota kaydinin acilmis olmasi gerekir - CdrEventController/CdrEventConsumerConfig
- * bu kayit yoksa QuotaNotFoundException firlatir. Bu consumer eksikti (bkz. CLAUDE.md Bolum 16):
- * SubscriptionActivated hicbir zaman tuketilmiyordu, yani Quota SADECE POST /api/v1/quotas ile elle
- * acilabiliyordu - kabul kriterindeki "otomatik" akis hic calismiyordu (canli testte yakalandi).
- */
 @Configuration
 public class SubscriptionEventConsumerConfig {
 

@@ -4,11 +4,6 @@ spring:
   profiles:
     active: native
 
-  # Yerel gelistirme icin native (dosya sistemi) backend kullanilir: configs/ altindaki dosyalar
-  # GitHub'a push etmeye gerek kalmadan aninda okunur. Ayni klasor yapisi (configs/, configs/{application}/)
-  # daha once git backend'de de kullaniliyordu, search-locations bunu birebir karsiliyor.
-  # Not: paylasilan/prod ortaminda git backend'e donmek icin sadece bu blogu eski git config'iyle
-  # degistirmek yeterli - servis kodlarinda hicbir degisiklik gerekmez.
   cloud:
     config:
       server:

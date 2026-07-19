@@ -1,6 +1,4 @@
 # syntax=docker/dockerfile:1
-# CLAUDE.md Bolum 15: root pom.xml'in <modules> reactor'u tum 13 servisi gorur, bu yuzden build
-# context repo koku olmali ve her modulun pom.xml'i (sadece bu servisin src'i degil) kopyalanmalidir.
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 
@@ -23,8 +21,6 @@ COPY config-server/src config-server/src
 RUN --mount=type=cache,target=/root/.m2 mvn -pl config-server -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
-# application.yaml'daki "file:../configs" native search-location'i bu WORKDIR'a gore cozulur;
-# docker-compose configs/ klasorunu /app/configs'e mount eder.
 WORKDIR /app/config-server
 COPY --from=build /workspace/config-server/target/*.jar app.jar
 EXPOSE 8888

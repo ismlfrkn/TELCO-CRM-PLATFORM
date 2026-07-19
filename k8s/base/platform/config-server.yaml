@@ -31,9 +31,6 @@ spec:
           env:
             - { name: JAVA_TOOL_OPTIONS, value: "-Xms64m -Xmx256m" }
             - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, value: "http://discovery-server:8761/eureka/" }
-          # config-server/src/main/resources/application.yaml: native search-locations
-          # "file:../configs,file:../configs/{application}" -> WORKDIR /app/config-server'a gore
-          # /app/configs'e cozulur (bkz. config-server/Dockerfile yorumu).
           volumeMounts:
             - name: app-configs
               mountPath: /app/configs
@@ -51,9 +48,6 @@ spec:
             httpGet: { path: /actuator/health, port: 8888 }
             periodSeconds: 15
       volumes:
-        # configs/ altindaki her alt klasor ayri bir ConfigMap'ten (bkz. kustomization.yaml
-        # configMapGenerator listesi) projected volume ile tek bir agac halinde birlestirilir -
-        # native config-server'in bekledigi orijinal dizin yapisini birebir yeniden olusturur.
         - name: app-configs
           projected:
             sources:

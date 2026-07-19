@@ -13,11 +13,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-/**
- * FR-08: bir Tariff satiri her updateTariff/patchTariff'te degistirilmeden once buraya
- * degismez (immutable) bir anlik goruntu olarak kopyalanir. Bu satirlar hicbir zaman
- * guncellenmez - sadece TariffService.archiveCurrentVersion tarafindan eklenir.
- */
 @Entity
 @Table(name = "tariff_versions")
 public class TariffVersion {

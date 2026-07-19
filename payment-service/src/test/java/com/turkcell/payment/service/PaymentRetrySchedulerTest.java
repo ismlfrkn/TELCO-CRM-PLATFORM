@@ -19,11 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/**
- * FR-27: bekleme suresi her denemeden sonra bir onceki denemenin uzerine eklenir
- * (24s -> 72s -> 168s), 4. denemeden sonra otomatik retry durur. "Simdi" sabit bir
- * Clock ile enjekte edilerek zaman hesaplamasi deterministik test edilir.
- */
 class PaymentRetrySchedulerTest {
 
     private static final Instant NOW = Instant.parse("2026-07-15T12:00:00Z");
@@ -89,7 +84,7 @@ class PaymentRetrySchedulerTest {
     void retryDuePayments_whenSecondRetryNotYetDue_doesNotCallRetry() {
         Payment payment = failedPayment();
         stubFailedPayments(payment);
-        // 24 saat gecti (1. bekleme suresi) ama bu 2. deneme icin gereken 72 saat degil
+
         stubLastAttempt(payment.getId(), 2, NOW.minus(Duration.ofHours(25)));
 
         scheduler.retryDuePayments();

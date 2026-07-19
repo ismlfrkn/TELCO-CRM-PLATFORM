@@ -9,7 +9,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface TariffVersionMapper {
 
-    // Guncel (henuz arsivlenmemis) versiyon: supersededAt yok demektir.
     @Mapping(target = "supersededAt", ignore = true)
     TariffVersionResponse fromCurrent(Tariff tariff);
 

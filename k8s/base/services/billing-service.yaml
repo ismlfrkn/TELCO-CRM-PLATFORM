@@ -32,7 +32,6 @@ spec:
           envFrom:
             - secretRef: { name: telco-secrets }
           env:
-            # PDFBox fatura uretimi diger servislere gore biraz daha fazla heap ister (bkz. docker-compose.yml).
             - { name: JAVA_TOOL_OPTIONS, value: "-Xms96m -Xmx352m" }
             - { name: SPRING_CONFIG_IMPORT, value: "optional:configserver:http://config-server:8888" }
             - { name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE, value: "http://discovery-server:8761/eureka/" }

@@ -42,15 +42,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/**
- * executeSaga'nin senkron Payment/Subscription cagrilarini kapsayan eski senaryolar artik burada
- * degil - saga'nin devami (PaymentCompleted/Failed, SubscriptionActivated/Failed tuketimi) artik
- * SagaEventConsumerConfigTest'te test ediliyor. Burada sadece OrderService'in kendi sorumlulugu olan
- * ILK adim (siparis olustur + OrderCreated yayinla) ve manuel iptal/sorgu davranislari kaliyor.
- * Musteri/katalog dogrulamasi CustomerServiceGateway/ProductCatalogServiceGateway (Resilience4j
- * sarmalayicilari) uzerinden yapiliyor - Payment/SubscriptionGateway artik kullanilmiyor (bkz.
- * OrderService, o cagrilar Kafka choreography'e tasindi).
- */
 class OrderServiceTest {
 
     private OrderRepository orderRepository;
@@ -105,7 +96,7 @@ class OrderServiceTest {
         verify(outboxEventService).publish(eq("Order"), eq(order.getId()), eq("OrderCreated"), any());
         verify(orderPersistenceService).markAwaitingPayment(order.getId());
         verify(idempotencyKeyService).complete(eq("idem-key-1"), any(), eq(201));
-        // Odeme/abonelik artik senkron tetiklenmiyor - bu asamada sadece OrderCreated yayinlanmis olmali.
+
         verify(outboxEventService, never()).publish(eq("Order"), any(), eq("OrderConfirmed"), any());
         verify(outboxEventService, never()).publish(eq("Order"), any(), eq("OrderCancelled"), any());
     }

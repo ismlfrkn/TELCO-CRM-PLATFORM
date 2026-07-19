@@ -49,9 +49,6 @@ outbox:
     poll-interval-ms: 5000
     batch-size: 20
 
-# FR-27: basarisiz odemeler icin otomatik retry job'i (PaymentRetryScheduler).
-# Varsayilan: her saat basi FAILED odemeleri tarar, sirasi gelenleri (24/72/168 saat
-# bekleme) PaymentService.retry() ile tekrar dener.
 payment:
   retry:
     cron: "0 0 * * * *"

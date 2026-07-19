@@ -17,12 +17,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
-/**
- * Bölüm 8.2: "Read-heavy servis - Redis cache yoğun kullanılır". tariffs/addons cache'leri
- * JSON serileştirir (DTO'ları Serializable yapmaya gerek kalmadan) ve product-catalog.cache.ttl-seconds
- * ile yapılandırılan bir TTL taşır - gerçek gecersiz kilma (invalidation) ise servis katmanindaki
- * @CacheEvict'ler ile yazma anında yapılır, TTL sadece kaçırılan bir evict yolu için güvenlik agi.
- */
 @Configuration
 @EnableCaching
 public class CacheConfig {
@@ -39,13 +33,7 @@ public class CacheConfig {
         ObjectMapper objectMapper = JsonMapper.builder()
                 .findAndAddModules()
                 .build();
-        // GenericJackson2JsonRedisSerializer'in NO-ARG constructor'i kendi ObjectMapper'inda
-        // activateDefaultTyping cagirip her degere bir "@class" alani gomer, boylece deserialize
-        // ederken hedef tipi (TariffResponse vb.) bilir. Burada oldugu gibi ObjectMapper'i disaridan
-        // verince bu otomatik olmuyor - tip bilgisi olmadan Jackson her nesneyi duz LinkedHashMap'e
-        // deserialize eder ve @Cacheable'li metotlarda ("(TariffResponse) cachedValue" gibi) cache
-        // HIT aninda ClassCastException firlar (canli testte yakalandi, unit testler cache'i mock'ladigi
-        // icin bunu hic tetiklemiyordu). activateDefaultTyping bunu tip bilgisini JSON'a gomerek cozer.
+
         objectMapper.activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder()
                         .allowIfSubType(Object.class)

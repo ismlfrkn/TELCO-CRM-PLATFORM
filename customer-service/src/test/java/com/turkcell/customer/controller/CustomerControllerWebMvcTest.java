@@ -33,13 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Bolum 11'deki RFC 7807 hata formati, HTTP status kodlari ve validation hata govdesi
- * bugune kadar hic HTTP seviyesinde test edilmemisti (denetim raporu bulgusu #3) - bu
- * testler controller + GlobalExceptionHandler ciftini gercek Spring MVC dispatch'i
- * uzerinden dogruluyor. Security filter zinciri (addFilters = false) kasitli olarak
- * disarida birakildi: amac auth degil, hata sozlesmesinin kendisi.
- */
 @WebMvcTest(controllers = CustomerController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class CustomerControllerWebMvcTest {
@@ -59,9 +52,6 @@ class CustomerControllerWebMvcTest {
     @MockBean
     private DocumentService documentService;
 
-    // GatewayHeaderAuthenticationFilter bean'i @WebMvcTest'in Filter-tipi tarama kapsamina giriyor
-    // (addFilters=false sadece MockMvc zincirinden cikarir, context'ten degil) ve bu bean'e ihtiyac
-    // duyuyor - gercekte hic calismiyor, sadece context refresh olabilsin diye mock'lanmasi gerekiyor.
     @MockBean
     private GatewayTrustProperties gatewayTrustProperties;
 
@@ -101,7 +91,6 @@ class CustomerControllerWebMvcTest {
     void createCustomer_withMissingRequiredFields_returns400WithValidationErrors() throws Exception {
         CustomerCreateRequest request = new CustomerCreateRequest();
         request.setEmail("not-an-email");
-        // type, firstName, lastName, identityNumber left blank on purpose
 
         mockMvc.perform(post("/api/v1/customers")
                         .contentType(MediaType.APPLICATION_JSON)

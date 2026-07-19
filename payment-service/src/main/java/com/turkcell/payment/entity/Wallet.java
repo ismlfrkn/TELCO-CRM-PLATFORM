@@ -21,7 +21,7 @@ public class Wallet {
     private UUID id;
 
     @Column(name = "customer_id", nullable = false)
-    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+    private UUID customerId;
 
     @Column(nullable = false)
     private BigDecimal balance;
@@ -30,7 +30,7 @@ public class Wallet {
     private String currency;
 
     @Column(nullable = false)
-    private String status; // ACTIVE, CLOSED
+    private String status;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

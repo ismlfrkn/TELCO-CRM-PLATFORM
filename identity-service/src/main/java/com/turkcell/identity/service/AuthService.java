@@ -118,7 +118,7 @@ public class AuthService {
             blacklistJti(jti, jwtTokenProvider.getExpiration(claims));
             auditLogService.record(userId, "LOGOUT", "User", userId, null, null);
         } catch (InvalidRefreshTokenException ex) {
-            // Zaten gecersiz/suresi dolmus bir refresh token icin logout idempotent kabul edilir
+
         }
     }
 

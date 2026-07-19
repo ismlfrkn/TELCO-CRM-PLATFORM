@@ -24,13 +24,13 @@ public class CdrEvent {
     private UUID id;
 
     @Column(name = "external_cdr_id", nullable = false, unique = true)
-    private String externalCdrId; // CDR mediation sisteminin kendi kimligi - idempotency anahtari
+    private String externalCdrId;
 
     @Column(nullable = false)
     private String msisdn;
 
     @Column(name = "cdr_type", nullable = false)
-    private String cdrType; // VOICE, SMS, DATA
+    private String cdrType;
 
     @Column(name = "start_time", nullable = false)
     private Instant startTime;
@@ -39,10 +39,10 @@ public class CdrEvent {
     private Instant endTime;
 
     @Column(name = "duration_seconds")
-    private Integer durationSeconds; // VOICE
+    private Integer durationSeconds;
 
     @Column(name = "data_volume_bytes")
-    private Long dataVolumeBytes; // DATA
+    private Long dataVolumeBytes;
 
     @Column(name = "party_b")
     private String partyB;

@@ -9,7 +9,7 @@ public class OrderItemRequest {
     private String productCode;
 
     @NotBlank(message = "Product type cannot be blank")
-    private String productType; // TARIFF, ADDON
+    private String productType;
 
     @Min(value = 1, message = "Quantity must be at least 1")
     private int quantity = 1;

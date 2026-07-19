@@ -24,16 +24,16 @@ public class UsageRecord {
     private UUID subscriptionId;
 
     @Column(nullable = false)
-    private String type; // VOICE, SMS, DATA
+    private String type;
 
     @Column(nullable = false)
-    private BigDecimal quantity; // VOICE: dakika, SMS: adet, DATA: MB
+    private BigDecimal quantity;
 
     @Column(name = "recorded_at", nullable = false)
     private Instant recordedAt;
 
     @Column(name = "cdr_ref")
-    private String cdrRef; // CdrEvent.externalCdrId
+    private String cdrRef;
 
     public UsageRecord() {
     }

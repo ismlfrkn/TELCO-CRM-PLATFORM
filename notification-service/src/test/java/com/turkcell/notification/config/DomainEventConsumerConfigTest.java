@@ -155,8 +155,6 @@ class DomainEventConsumerConfigTest {
         verify(eventIdempotencyService, never()).tryClaim(any(), anyString());
     }
 
-    // ---- orderEvents ----
-
     @Test
     void orderCancelledDispatchesNotification() {
         UUID eventId = UUID.randomUUID();
@@ -181,8 +179,6 @@ class DomainEventConsumerConfigTest {
         verify(eventIdempotencyService, never()).tryClaim(any(), anyString());
     }
 
-    // ---- paymentEvents ----
-
     @Test
     void paymentFailedDispatchesNotification() {
         UUID eventId = UUID.randomUUID();
@@ -206,8 +202,6 @@ class DomainEventConsumerConfigTest {
         verify(mockNotificationDispatcher, never()).dispatch(anyString(), anyString(), anyString());
         verify(eventIdempotencyService, never()).tryClaim(any(), anyString());
     }
-
-    // ---- usageEvents (FR-19) ----
 
     @Test
     void quotaThresholdReachedDispatchesWarningSms() {
@@ -273,8 +267,6 @@ class DomainEventConsumerConfigTest {
         verify(mockNotificationDispatcher, never()).dispatchQuotaThresholdWarning(anyString(), anyString());
         verify(mockNotificationDispatcher, never()).dispatchQuotaExceededWithAddonSuggestion(anyString(), anyString());
     }
-
-    // ---- FR-29: sablonlu bildirim (gercek NotificationService.send akisi) ----
 
     @Test
     void customerRegisteredWithFirstName_sendsTemplatedWelcomeSms() {

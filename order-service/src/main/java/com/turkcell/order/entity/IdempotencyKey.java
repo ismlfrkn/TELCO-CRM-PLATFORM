@@ -18,9 +18,6 @@ public class IdempotencyKey {
     @Column(name = "request_hash", nullable = false)
     private String requestHash;
 
-    // Saga tamamlanana kadar bos kalir (claim asamasi) - bu, ayni Idempotency-Key ile eszamanli
-    // gelen ikinci istegin saga'yi TEKRAR calistirmasini (cift odeme/cift abonelik) engeller: satir
-    // bu alan olmadan once eklenir, boylece unique constraint ikinci istegi hemen reddeder.
     @Column(name = "response_snapshot", columnDefinition = "TEXT")
     private String responseSnapshot;
 

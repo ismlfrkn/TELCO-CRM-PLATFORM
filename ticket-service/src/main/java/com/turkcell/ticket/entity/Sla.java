@@ -24,10 +24,10 @@ public class Sla {
     private String priority;
 
     @Column(name = "response_time", nullable = false)
-    private int responseTime; // dakika
+    private int responseTime;
 
     @Column(name = "resolution_time", nullable = false)
-    private int resolutionTime; // dakika
+    private int resolutionTime;
 
     public Sla() {
     }

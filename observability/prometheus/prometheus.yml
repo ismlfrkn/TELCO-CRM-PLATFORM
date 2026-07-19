@@ -2,9 +2,6 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-# Tum servisler artik micrometer-registry-prometheus'a sahip (kok pom.xml, Bolum 16) ve
-# /actuator/prometheus'u expose ediyor (configs/application.yaml). Bu yigin sadece
-# `docker compose --profile observability up -d` ile acildiginda scrape gercekten calisir.
 scrape_configs:
   - job_name: 'api-gateway'
     metrics_path: /actuator/prometheus

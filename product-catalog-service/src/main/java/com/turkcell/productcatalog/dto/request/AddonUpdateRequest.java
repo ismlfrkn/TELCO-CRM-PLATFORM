@@ -28,7 +28,6 @@ public class AddonUpdateRequest {
     @NotBlank(message = "Status cannot be blank")
     private String status;
 
-    // Getters and Setters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

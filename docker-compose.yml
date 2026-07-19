@@ -2,18 +2,11 @@ services:
   postgres:
     image: postgres:16
     container_name: telco-postgres
-    # Varsayilan max_connections=100, 10 domain servisinin HikariCP havuzlariyla (bkz.
-    # configs/application.yaml) birlikte dahi asilmasin diye genis bir marjla 200'e cikarildi.
     command: postgres -c max_connections=200
-    # Bellek tavani: WSL2/Docker Desktop varsayilan olarak host RAM'inin sadece %50'sini kullanir
-    # (bkz. CLAUDE.md Bolum 15) ve JVM'ler sinirsiz -Xmx ile bu havuzu kolayca tasirip motoru
-    # tikayabiliyordu. Her serviste sabit bir mem_limit + (JVM'lerde) -Xmx tavani, toplam
-    # kullanimin ongorulebilir kalmasini saglar.
     mem_limit: 512m
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # This is the default db, but we can create logical DBs later if needed
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
@@ -85,11 +78,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ---------------------------------------------------------------------------
-  # Platform servisleri (Bolum 7 / CLAUDE.md Bolum 15 baslatma sirasiyla ayni):
-  # discovery-server -> config-server -> api-gateway -> domain servisleri.
-  # ---------------------------------------------------------------------------
-
   discovery-server:
     build:
       context: .
@@ -116,8 +104,6 @@ services:
     container_name: telco-config-server
     mem_limit: 384m
     volumes:
-      # application.yaml'daki native search-location "file:../configs,file:../configs/{application}"
-      # WORKDIR /app/config-server'a gore bu mount'u cozer (bkz. config-server/Dockerfile).
       - ./configs:/app/configs:ro
     environment:
       JAVA_TOOL_OPTIONS: "-Xms64m -Xmx256m"
@@ -407,7 +393,6 @@ services:
     env_file:
       - .env
     environment:
-      # PDFBox fatura uretimi diger servislere gore biraz daha fazla heap ister.
       JAVA_TOOL_OPTIONS: "-Xms96m -Xmx352m"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
@@ -547,16 +532,6 @@ services:
       retries: 10
       start_period: 30s
 
-  # ---------------------------------------------------------------------------
-  # Gozlemlenebilirlik yigini (Zipkin/Prometheus/Grafana/ELK): api-gateway + 10 domain servisinin
-  # hepsi artik gercek trace (Micrometer+Brave), metric (/actuator/prometheus) ve JSON log
-  # (LogstashTcpSocketAppender) uretiyor (bkz. CLAUDE.md Bolum 16, kok pom.xml, configs/application.yaml,
-  # her serviste logback-spring.xml). Yine de "docker compose up" ile varsayilan olarak
-  # BASLAMAZLAR (Elasticsearch tek basina en az ~1GB) - ihtiyac oldugunda
-  # `docker compose --profile observability up -d` ile acilirlar; kapaliyken servisler span/log
-  # gonderimini sessizce arka planda basarisiz sayar, hicbir istegi bloklamaz/cokertmez.
-  # ---------------------------------------------------------------------------
-
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: telco-zipkin
@@ -565,10 +540,6 @@ services:
     environment:
       JAVA_OPTS: "-Xms64m -Xmx256m"
     ports:
-      # Bkz. logstash/kibana servislerindeki ayni not: Windows'un Hyper-V icin dinamik olarak
-      # ayirdigi port araliklari (netsh interface ipv4 show excludedportrange protocol=tcp) 9411'i
-      # de kapsayabiliyor; container ici port (Zipkin'in kendi varsayilani) degismedi, sadece host
-      # mapping'i farkli.
       - "19411:9411"
     networks:
       - telco-net
@@ -636,9 +607,6 @@ services:
     volumes:
       - ./observability/logstash/pipeline:/usr/share/logstash/pipeline:ro
     ports:
-      # Host 5000/5001, bu makinede Windows'un Hyper-V icin ayirdigi dinamik port araligiyla
-      # (netsh interface ipv4 show excludedportrange protocol=tcp -> 4912-5011) catisiyor;
-      # container ici port (logstash.conf'taki TCP input) degismedi, sadece host mapping'i farkli.
       - "5900:5000"
     depends_on:
       elasticsearch:
@@ -655,9 +623,6 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       NODE_OPTIONS: "--max-old-space-size=448"
     ports:
-      # Bkz. logstash servisindeki not: Windows'un Hyper-V icin dinamik olarak ayirdigi port
-      # araliklari zamanla kayabiliyor (5601 de tekrarlayan sekilde catisti); daha yuksek, bu
-      # araliklarin disinda kalan bir host portu kullanildi.
       - "15601:5601"
     depends_on:
       elasticsearch:

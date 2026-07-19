@@ -29,9 +29,6 @@ spec:
       containers:
         - name: postgres
           image: postgres:16
-          # docker-compose.yml'deki "postgres -c max_connections=200" ile ayni gerekce:
-          # 10 domain servisinin HikariCP havuzlari (bkz. configs/application.yaml) varsayilan
-          # max_connections=100'u zorluyor.
           args: ["-c", "max_connections=200"]
           ports:
             - containerPort: 5432
@@ -45,8 +42,6 @@ spec:
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef: { name: telco-secrets, key: POSTGRES_DB }
-            # PVC bos degilse (ör. onceki bir PGDATA artigi) initdb'nin "directory not empty"
-            # hatasi vermemesi icin alt dizin kullanilir.
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:

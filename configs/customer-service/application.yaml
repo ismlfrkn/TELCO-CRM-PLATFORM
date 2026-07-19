@@ -35,9 +35,6 @@ outbox:
     poll-interval-ms: 5000
     batch-size: 20
 
-# TCKN/VKN alan bazli AES-256-GCM sifreleme anahtari (Base64, 32 byte).
-# Deger burada tutulmaz; PII_ENCRYPTION_KEY ortam degiskeninden (K8s Secret'ta) okunur
-# (bkz. .env.example, scripts/load-env.ps1).
 pii:
   encryption-key: ${PII_ENCRYPTION_KEY}
 

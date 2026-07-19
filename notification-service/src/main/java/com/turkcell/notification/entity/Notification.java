@@ -16,14 +16,14 @@ public class Notification {
 
     public static final String STATUS_SENT = "SENT";
     public static final String STATUS_FAILED = "FAILED";
-    public static final String STATUS_SKIPPED = "SKIPPED"; // FR-30: kullanici bu kanaldan opt-out etmis
+    public static final String STATUS_SKIPPED = "SKIPPED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private UUID userId; // identity-service'e ait, cross-service referans (FK degil)
+    private UUID userId;
 
     @Column(name = "template_code", nullable = false)
     private String templateCode;

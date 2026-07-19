@@ -22,10 +22,6 @@ resources:
   - services/notification-service.yaml
   - services/ticket-service.yaml
 
-# ConfigMap isimleri sabit tutuluyor (hash suffix yok) cunku config-server.yaml bunlari
-# projected volume icinde adla referans aliyor. Bedeli: config icerigi degisince Deployment
-# otomatik rollout olmaz, "kubectl rollout restart deployment/config-server -n telco-crm"
-# elle tetiklenmeli - lab kapsaminda kabul edilebilir bir basitlestirme.
 generatorOptions:
   disableNameSuffixHash: true
 
@@ -91,13 +87,6 @@ configMapGenerator:
     files:
       - ../../configs/usage-service/application.yml
 
-# Deployment'lardaki "image:" alanlari mantiksal isimler (telco-<servis>:latest) - burada gercek
-# registry/repo/tag'e ceviriliyor. newName, .github/workflows/ci-cd.yml'deki DOCKER_USERNAME
-# secret'iyla ayni Docker Hub hesabi olmali (dogrulandi: "docker pull codebynurgul/telco-discovery-server:latest"
-# basarili). newTag "latest" sabit tutuluyor: ci-cd.yml'deki "docker" job'u her push'ta hem
-# ":latest" hem ":<sha>" etiketiyle push ediyor, "k8s-deploy-check" job'u "docker" job'undan SONRA
-# calistigi icin (needs: docker) ":latest" o an itibariyle her zaman az once push edilen image'dir -
-# ayrica bir "kustomize edit set image" adimina gerek yok.
 images:
   - { name: telco-discovery-server, newName: codebynurgul/telco-discovery-server, newTag: latest }
   - { name: telco-config-server, newName: codebynurgul/telco-config-server, newTag: latest }

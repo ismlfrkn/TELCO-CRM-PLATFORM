@@ -9,11 +9,6 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-  # Zipkin container sadece `docker compose --profile observability up` ile acilir (bkz. Bolum 15).
-  # Kapaliyken bu span'ler sadece arka planda basarisiz raporlanir (Brave/Zipkin reporter async ve
-  # dayaniklidir) - istekleri bloklamaz/servisi cokertmez, sadece loglarda periyodik "connection
-  # refused" gorursun. localhost:9411 host-tarafi (mvn spring-boot:run) varsayilanidir; docker-compose
-  # her serviste bunu zipkin:9411'e ezer (container-network hostname).
   tracing:
     sampling:
       probability: 1.0
@@ -21,31 +16,15 @@ management:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans
 
-# Postgres varsayilan max_connections=100. 10 domain servisinin her biri Spring Boot'un HikariCP
-# varsayilanini (maximum-pool-size: 10) kullanirsa bu tek basina 100'e denk gelir; pgAdmin ve
-# Flyway'in ac-kapa yaptigi ekstra baglantilarla birlikte limit asilir ve postgres "sorry, too
-# many clients already" ile servisleri birer birer dusurur. Havuzu servis basina kucultuyoruz
-# (10 servis x 5 = 50 baglanti, docker-compose.yml'deki postgres max_connections=200 ile birlikte
-# genis bir marj birakir). Herhangi bir servisin application.yml'i kendi hikari degerini
-# tanimlarsa bu global varsayilani ezer.
 spring:
   datasource:
     hikari:
       maximum-pool-size: 5
       minimum-idle: 2
 
-# api-gateway ile downstream servisler arasinda paylasilan internal secret.
-# Downstream servisler X-User-Id/X-User-Roles header'larina yalnizca bu secret dogruysa guvenir
-# (bkz. identity-service GatewayHeaderAuthenticationFilter). Tum servislerde ayni deger olmalidir.
-# Deger burada tutulmaz; her servis kendi sureç ortamindaki GATEWAY_INTERNAL_SECRET'tan okur
-# (bkz. .env.example, scripts/load-env.ps1). Yuklenmemisse servis "Could not resolve
-# placeholder" hatasiyla baslamaz - bu kasitlidir, sessizce zayif bir varsayilana dusmemek icin.
 gateway:
   internal-secret: ${GATEWAY_INTERNAL_SECRET}
 
-# identity-service'in access token uretmek, api-gateway'in ise dogrulamak icin kullandigi ayni HMAC
-# secret (jjwt, HS256). Global tanimlanir ki iki servis de ayni degeri tek kaynaktan okusun.
-# Deger burada tutulmaz; JWT_SECRET ortam degiskeninden okunur (bkz. .env.example).
 jwt:
   secret: ${JWT_SECRET}
 

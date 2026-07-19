@@ -27,7 +27,6 @@ public class TariffResponse {
     private Instant createdAt;
     private List<AddonResponse> addons;
 
-    // Getters and Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 

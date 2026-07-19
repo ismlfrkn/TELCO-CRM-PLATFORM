@@ -19,8 +19,6 @@ public class TariffVersionResponse {
     private LocalDate effectiveTo;
     private String currency;
 
-    // null ise bu, tarifenin su anki (guncel) hali demektir; dolu ise bu versiyonun ne zaman
-    // bir sonraki guncellemeyle degistirildigini gosterir.
     private Instant supersededAt;
 
     public String getCode() { return code; }

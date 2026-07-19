@@ -20,7 +20,7 @@ public class Document {
     private Customer customer;
 
     @Column(nullable = false)
-    private String type; // ID_CARD, PASSPORT
+    private String type;
 
     @Column(name = "file_ref", nullable = false)
     private String fileRef;

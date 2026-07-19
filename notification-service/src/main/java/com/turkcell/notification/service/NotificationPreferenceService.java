@@ -11,11 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * FR-30: kullanici bazli kanal opt-in/opt-out tercihleri. Kayit yoksa varsayilan opted-in
- * kabul edilir - musteri hicbir tercih belirtmeden mevcut senaryolar (welcome SMS vb.) calismaya
- * devam eder, sadece acikca opt-out eden kullanicilar icin gonderim durur.
- */
 @Service
 public class NotificationPreferenceService {
 

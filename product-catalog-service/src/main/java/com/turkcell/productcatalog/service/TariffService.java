@@ -142,12 +142,6 @@ public class TariffService {
         return response;
     }
 
-    /**
-     * FR-08: bir onceki versiyonu (henuz yeni degerler uygulanmadan once) immutable bir
-     * anlik goruntu olarak tariff_versions'a kopyalar. subscription-service gibi tuketiciler
-     * bu satirlar sayesinde "eski abonemin baglandigi versiyonun sartlari neydi" sorusunu
-     * yanitlayabilir (bkz. GET /tariffs/{code}/versions/{version}).
-     */
     private void archiveCurrentVersion(Tariff tariff) {
         TariffVersion snapshot = new TariffVersion();
         snapshot.setTariffId(tariff.getId());
@@ -166,10 +160,6 @@ public class TariffService {
         tariffVersionRepository.save(snapshot);
     }
 
-    /**
-     * Belirli bir versiyonun sartlarini dondurur: istenen versiyon guncel (henuz arsivlenmemis)
-     * versiyonsa canli satirdan, degilse tariff_versions'daki immutable kayittan okunur.
-     */
     public TariffVersionResponse getTariffVersion(String code, int version) {
         Tariff tariff = findTariffEntityByCode(code);
 
@@ -183,10 +173,6 @@ public class TariffService {
                         "Tariff " + code + " has no version " + version));
     }
 
-    /**
-     * Gecmis (arsivlenmis) versiyonlarin listesi, en yeniden en eskiye. Guncel versiyon zaten
-     * GET /tariffs/{code} ile alinabildigi icin bu listeye dahil edilmez.
-     */
     public List<TariffVersionResponse> getTariffVersionHistory(String code) {
         findTariffEntityByCode(code);
         return tariffVersionRepository.findAllByCodeOrderByVersionDesc(code).stream()
@@ -194,22 +180,11 @@ public class TariffService {
                 .toList();
     }
 
-    /**
-     * getTariffByCode'dan farkli olarak status'u (ACTIVE/INACTIVE) filtrelemez - deaktive
-     * edilmis bir tarifenin gecmis versiyonlari da sorgulanabilir olmali.
-     */
     private Tariff findTariffEntityByCode(String code) {
         return tariffRepository.findByCode(code)
                 .orElseThrow(() -> new TariffNotFoundException("Tariff not found with code: " + code));
     }
 
-    /**
-     * monthlyFee gercekten degistiyse (fiyat degisikligi diger alan degisikliklerinden ayri bir
-     * semantige sahip - tuketen servisler icin onemli olabilir) TariffPriceChanged, aksi halde
-     * (fiyat ayni kalip sadece isim/aciklama/kota gibi alanlar degistiyse) mevcut TariffUpdated
-     * yayinlanir. Ayni cagrida hem fiyat hem baska alanlar birden degisirse de TariffPriceChanged
-     * yayinlanir - fiyat degisikligi tuketiciler icin daha kritik/spesifik bir sinyal sayilir.
-     */
     private String updateEventTypeFor(BigDecimal oldMonthlyFee, BigDecimal newMonthlyFee) {
         boolean priceChanged = oldMonthlyFee == null
                 ? newMonthlyFee != null
@@ -231,7 +206,7 @@ public class TariffService {
     public void linkAddonToTariff(String tariffCode, String addonCode) {
         Tariff tariff = getTariffByCode(tariffCode);
         Addon addon = addonService.getAddonByCode(addonCode);
-        
+
         tariff.getAddons().add(addon);
         tariffRepository.save(tariff);
     }

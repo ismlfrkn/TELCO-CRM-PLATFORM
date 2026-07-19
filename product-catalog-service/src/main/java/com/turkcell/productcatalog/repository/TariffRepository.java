@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Repository
 public interface TariffRepository extends JpaRepository<Tariff, UUID> {
-    
+
     Optional<Tariff> findByCode(String code);
 
     Optional<Tariff> findByCodeAndStatusNot(String code, String status);

@@ -9,11 +9,6 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * existsByIdentityNumber mukerrer kontrolu ve DB'deki UNIQUE kisiti, sifreli kolonda esitlik
- * karsilastirmasina dayanir - bu yuzden ayni acik metnin HER ZAMAN ayni ciphertext'i uretmesi
- * (determinizm) burada ayrica dogrulanir; rastgele IV kullanilsaydi bu testler kirilirdi.
- */
 class IdentityNumberConverterTest {
 
     private IdentityNumberConverter converter;

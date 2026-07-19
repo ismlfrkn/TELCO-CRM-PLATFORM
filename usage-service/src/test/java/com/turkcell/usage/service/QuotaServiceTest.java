@@ -110,7 +110,7 @@ class QuotaServiceTest {
 
         QuotaService.QuotaDeductionResult result = quotaService.deduct(subscriptionId, "DATA", BigDecimal.valueOf(5.2));
 
-        assertThat(result.quota().getMbRemaining()).isEqualTo(94); // 5.2 -> 6 MB'a yuvarlanir
+        assertThat(result.quota().getMbRemaining()).isEqualTo(94);
     }
 
     @Test
@@ -135,7 +135,7 @@ class QuotaServiceTest {
     void deduct_crossing80PercentThreshold_firesThresholdReachedEvent() {
         UUID subscriptionId = UUID.randomUUID();
         Quota quota = quotaWith(100, 0, 0);
-        quota.setMinutesRemaining(25); // %75 kullanilmis, esik (20) henuz gecilmemis
+        quota.setMinutesRemaining(25);
 
         when(quotaRepository.findBySubscriptionIdForUpdate(subscriptionId)).thenReturn(Optional.of(quota));
 
@@ -150,7 +150,7 @@ class QuotaServiceTest {
     void deduct_crossingZero_firesQuotaExceededEventInsteadOfThreshold() {
         UUID subscriptionId = UUID.randomUUID();
         Quota quota = quotaWith(100, 0, 0);
-        quota.setMinutesRemaining(15); // zaten esigin altinda
+        quota.setMinutesRemaining(15);
 
         when(quotaRepository.findBySubscriptionIdForUpdate(subscriptionId)).thenReturn(Optional.of(quota));
 
@@ -158,7 +158,7 @@ class QuotaServiceTest {
 
         assertThat(result.quota().getMinutesRemaining()).isEqualTo(-5);
         assertThat(result.thresholdEvent()).isEqualTo("QuotaExceeded");
-        // 20 dakikalik CDR'in sadece esigi asan 5 dakikalik kismi asim sayilir (billing'e agregasyon icin).
+
         assertThat(result.overageQuantity()).isEqualByComparingTo(BigDecimal.valueOf(5));
     }
 
@@ -166,7 +166,7 @@ class QuotaServiceTest {
     void deduct_alreadyBelowThreshold_doesNotRefireThresholdEvent() {
         UUID subscriptionId = UUID.randomUUID();
         Quota quota = quotaWith(100, 0, 0);
-        quota.setMinutesRemaining(5); // zaten %80 esiginin altinda
+        quota.setMinutesRemaining(5);
 
         when(quotaRepository.findBySubscriptionIdForUpdate(subscriptionId)).thenReturn(Optional.of(quota));
 
@@ -180,7 +180,7 @@ class QuotaServiceTest {
     void deduct_alreadyExceeded_doesNotRefireExceededEvent() {
         UUID subscriptionId = UUID.randomUUID();
         Quota quota = quotaWith(100, 0, 0);
-        quota.setMinutesRemaining(-5); // zaten asilmis
+        quota.setMinutesRemaining(-5);
 
         when(quotaRepository.findBySubscriptionIdForUpdate(subscriptionId)).thenReturn(Optional.of(quota));
 
@@ -188,7 +188,7 @@ class QuotaServiceTest {
 
         assertThat(result.quota().getMinutesRemaining()).isEqualTo(-8);
         assertThat(result.thresholdEvent()).isNull();
-        // Zaten asimdaki bir abone icin sonraki her CDR'in tamami asim sayilir (esigi tekrar gecmeye gerek yok).
+
         assertThat(result.overageQuantity()).isEqualByComparingTo(BigDecimal.valueOf(3));
     }
 

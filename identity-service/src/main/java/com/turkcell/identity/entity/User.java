@@ -28,10 +28,10 @@ public class User {
     private String passwordHash;
 
     @Column(nullable = false, length = 20)
-    private String status; // ACTIVE, INACTIVE, SUSPENDED
+    private String status;
 
     @Column(name = "customer_id")
-    private UUID customerId; // customer-service'teki Customer'a capraz-servis referans, FK degil
+    private UUID customerId;
 
     @Column(name = "last_login_at")
     private Instant lastLoginAt;

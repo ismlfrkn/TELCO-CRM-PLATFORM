@@ -59,8 +59,6 @@ metadata:
   name: api-gateway
   namespace: telco-crm
 spec:
-  # NodePort, ClusterIP erisimini de kapsar - "kubectl port-forward svc/api-gateway 8080:8080"
-  # ve (istenirse) "minikube service api-gateway" ikisi de bu tek Service uzerinden calisir.
   type: NodePort
   selector:
     app: api-gateway

@@ -15,20 +15,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
- * Order->Payment bacagi artik CLAUDE.md Bolum 8.2'deki choreography'e gore fonksiyonel Consumer<T>
- * bean'leriyle calisir (senkron OpenFeign zincirinin yerine gecti). Uc yon var:
- *  - orderEvents: OrderCreated'i tuketip odemeyi baslatir (mevcut createPayment idempotency'sini
- *    aynen kullanir - orderId'den turetilen idempotencyKey ile ayni OrderCreated iki kez gelse bile
- *    odeme tekrar islenmez).
- *  - subscriptionEvents: sadece SubscriptionActivationFailed'i dinler, kompansasyon olarak refund
- *    tetikler (payment doğrulama disindaki tum akis asenkron).
- *  - invoiceEvents: FR-24/Bolum 7 "auto-pay" senaryosu - billing-service'in InvoiceGenerated'ini
- *    tuketip faturayi otomatik oder (invoiceId'den turetilen idempotencyKey ile ayni InvoiceGenerated
- *    iki kez gelse bile odeme tekrar islenmez). Payment burada orderId degil invoiceId tasir -
- *    billing-service'in PaymentCompleted consumer'i bu ayrimla siparis odemesini kendisiyle
- *    ilgilendirmeyen bir event olarak eler.
- */
 @Configuration
 public class SagaEventConsumerConfig {
 

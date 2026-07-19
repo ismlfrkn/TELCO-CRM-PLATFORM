@@ -20,10 +20,8 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Nullable: siparis anindaki (aktivasyon ucreti gibi) odemelerin henuz bir faturasi olmaz,
-    // fatura aylik bill-run ile sonradan kesilir (order-service saga entegrasyonu icin gevsetildi).
     @Column(name = "invoice_id")
-    private UUID invoiceId; // billing-service'e ait, cross-service referans (FK degil)
+    private UUID invoiceId;
 
     @Column(nullable = false)
     private BigDecimal amount;
@@ -32,10 +30,10 @@ public class Payment {
     private String currency;
 
     @Column(nullable = false)
-    private String method; // CARD, BANK_TRANSFER, WALLET
+    private String method;
 
     @Column(name = "wallet_id")
-    private UUID walletId; // sadece method=WALLET oldugunda dolu, ayni servis icinde referans
+    private UUID walletId;
 
     @Column(name = "external_ref")
     private String externalRef;
@@ -44,21 +42,19 @@ public class Payment {
     private Instant paidAt;
 
     @Column(nullable = false)
-    private String status; // PENDING, COMPLETED, FAILED, REFUNDED
+    private String status;
 
     @Column(name = "idempotency_key", nullable = false, unique = true)
     private String idempotencyKey;
 
-    // Asagidaki 3 alan Payment'in kendi domain'i degil - OrderCreated event'inden tasinan saga
-    // korelasyon verisi (subscription-service'in senkron geri sorgu yapmadan abonelik acabilmesi icin).
     @Column(name = "order_id")
-    private UUID orderId; // order-service'e ait, cross-service referans (FK degil)
+    private UUID orderId;
 
     @Column(name = "customer_id")
-    private UUID customerId; // customer-service'e ait, cross-service referans (FK degil)
+    private UUID customerId;
 
     @Column(name = "tariff_code")
-    private String tariffCode; // product-catalog-service'e ait, cross-service referans (FK degil)
+    private String tariffCode;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

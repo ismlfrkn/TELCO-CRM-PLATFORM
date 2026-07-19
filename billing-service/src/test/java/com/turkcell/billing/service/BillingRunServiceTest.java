@@ -98,8 +98,6 @@ class BillingRunServiceTest {
         when(subscriptionServiceClient.getActiveSubscriptions(any(Pageable.class)))
                 .thenReturn(pageOf(List.of(subscription), true));
 
-        // Guncel tarife fiyati zamlanmis (150.00) ama abonelik versiyon 1'e pinli (99.90 eski fiyat) -
-        // fatura eski fiyattan kesilmeli, FR-08'in ta kendisi.
         when(productCatalogServiceClient.getTariff("STD-POSTPAID-100"))
                 .thenReturn(tariffOf("STD-POSTPAID-100", "Standart 100", "150.00", "TRY"));
         TariffVersionClientDto pinnedVersion = new TariffVersionClientDto();

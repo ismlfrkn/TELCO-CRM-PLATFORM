@@ -85,7 +85,7 @@ class InvoiceServiceTest {
         InvoiceResponse response = invoiceService.createInvoice(request);
 
         assertThat(response.getSubTotal()).isEqualByComparingTo("200.00");
-        assertThat(response.getTax()).isEqualByComparingTo("40.00"); // %20 KDV
+        assertThat(response.getTax()).isEqualByComparingTo("40.00");
         assertThat(response.getGrandTotal()).isEqualByComparingTo("240.00");
         assertThat(response.getStatus()).isEqualTo(Invoice.STATUS_PENDING);
         verify(outboxEventService).publish(eq("Invoice"), any(), eq("InvoiceGenerated"), any());
@@ -179,7 +179,6 @@ class InvoiceServiceTest {
 
         InvoiceResponse response = invoiceService.createInvoice(request);
 
-        // 100.00 aylik ucret + (100 dakika * 0.50) = 150.00 subTotal, %20 KDV ile 180.00 grandTotal
         assertThat(response.getSubTotal()).isEqualByComparingTo("150.00");
         assertThat(response.getGrandTotal()).isEqualByComparingTo("180.00");
         assertThat(response.getLines()).extracting("description")
@@ -215,8 +214,7 @@ class InvoiceServiceTest {
 
         InvoiceResponse response = invoiceService.createInvoice(request);
 
-        // 60+40=100 dakika birlesik, tek satir: 100 * 1.00 = 100.00
-        assertThat(response.getLines()).hasSize(2); // Monthly fee (0.00) + tek birlesik asim satiri
+        assertThat(response.getLines()).hasSize(2);
         assertThat(response.getSubTotal()).isEqualByComparingTo("100.00");
     }
 
@@ -232,7 +230,7 @@ class InvoiceServiceTest {
         when(usageAggregateRepository.findBySubscriptionIdAndInvoiceIdIsNull(subscriptionId))
                 .thenReturn(List.of(overage));
 
-        TariffClientDto tariff = new TariffClientDto(); // overageRatePerMinute null/0 varsayilan
+        TariffClientDto tariff = new TariffClientDto();
         when(productCatalogServiceClient.getTariff("STD-POSTPAID-100")).thenReturn(tariff);
 
         InvoiceCreateRequest request = requestWithLines(subscriptionId, lineOf("Monthly fee", "1", "100.00"));
@@ -242,8 +240,8 @@ class InvoiceServiceTest {
 
         InvoiceResponse response = invoiceService.createInvoice(request);
 
-        assertThat(response.getSubTotal()).isEqualByComparingTo("100.00"); // asim satiri eklenmedi
-        // rate yoksa/0 ise claim de edilmez - asim kaydi bir sonraki bill-run'da hala secilebilir olmali
+        assertThat(response.getSubTotal()).isEqualByComparingTo("100.00");
+
         verify(usageAggregateRepository, never()).saveAll(any());
     }
 

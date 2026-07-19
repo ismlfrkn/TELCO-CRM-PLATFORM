@@ -12,13 +12,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * OrderService'in DB yazma islemleri BILEREK ayri bir bean'e cikarildi: @Transactional, ayni sinif
- * icinde this.metod() ile (self-invocation) cagrildiginda Spring'in proxy'sini atlar ve SESSIZCE hicbir
- * transaction acmaz (identity-service'teki AuditLogService'ten beri bu projede dikkat edilen bir konu -
- * bkz. payment/usage/billing servislerindeki TransactionTemplate kullanimlari). Burada ayri bir bean
- * olmasi, gercek bir proxy siniri gectigi icin @Transactional'in dogru calismasini saglar.
- */
 @Service
 public class OrderPersistenceService {
 

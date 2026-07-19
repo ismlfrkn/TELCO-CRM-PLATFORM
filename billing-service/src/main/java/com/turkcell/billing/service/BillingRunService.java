@@ -19,13 +19,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * FR-21: "Aylik bill-run job'u ... fatura keser" - dokumanin kendi kabul kriterinde (bolum 14.2)
- * bu job'un MANUEL tetiklendigi acikca belirtiliyor, bu yuzden zamanlanmis (scheduled) bir gorev
- * kurulmadi; bu endpoint tam olarak o manuel tetiklemeyi temsil eder. Her satir kendi icinde
- * idempotent oldugu (InvoiceService.createInvoice) icin bill-run yanlislikla iki kez calistirilirsa
- * da cift fatura olusmaz.
- */
 @Service
 public class BillingRunService {
 
@@ -55,12 +48,6 @@ public class BillingRunService {
         return response;
     }
 
-    /**
-     * FR-21 otomatik mod: "hangi aboneye fatura kesilecek" ve "aylik ucret ne kadar" artik cagirandan
-     * elle alinmiyor - subscription-service'ten TUM ACTIVE abonelikler sayfa sayfa cekilir, her biri
-     * icin aylik ucret satiri kurulur. Asim hesaplamasi zaten InvoiceService.processNewInvoice icinde
-     * tariffCode doluysa otomatik calisir (FR-22), burada ayrica tetiklemeye gerek yok.
-     */
     public BillingRunResponse runAutomatic(BillingRunAutoRequest request) {
         List<InvoiceResponse> invoices = new ArrayList<>();
         List<SubscriptionClientDto> activeSubscriptions = fetchAllActiveSubscriptions();
@@ -91,14 +78,6 @@ public class BillingRunService {
         return all;
     }
 
-    /**
-     * FR-08: abonelik bir tarife versiyonuna pinliyse (subscription-service artik PaymentCompleted
-     * tuketirken bunu dolduruyor, bkz. subscription-service SagaEventConsumerConfig), aylik ucret
-     * satiri o DONMUS versiyondan kurulur - tarife o abonelikten sonra fiyatlandirilmis olsa bile
-     * bu abone hala eski fiyatta kalir. tariffVersion null ise (bu duzeltmeden ONCE olusmus eski
-     * abonelikler, ya da REST ile elle olusturulmus test verisi) geriye donuk uyumluluk icin guncel
-     * tarifeye dusulur - eski davranis aynen sürer.
-     */
     private InvoiceCreateRequest buildInvoiceRequest(SubscriptionClientDto subscription, BillingRunAutoRequest request) {
         String name;
         BigDecimal monthlyFee;

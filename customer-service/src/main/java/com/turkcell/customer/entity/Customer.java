@@ -18,7 +18,7 @@ public class Customer {
     private UUID id;
 
     @Column(nullable = false)
-    private String type; // INDIVIDUAL, CORPORATE
+    private String type;
 
     @Column(name = "first_name", nullable = false)
     private String firstName;
@@ -28,7 +28,7 @@ public class Customer {
 
     @Column(name = "identity_number", nullable = false, unique = true)
     @Convert(converter = IdentityNumberConverter.class)
-    private String identityNumber; // TCKN (INDIVIDUAL) or VKN (CORPORATE) - AES-256-GCM ile sifreli saklanir
+    private String identityNumber;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
@@ -40,7 +40,7 @@ public class Customer {
     private String phone;
 
     @Column(nullable = false)
-    private String status; // PENDING, ACTIVE, REJECTED
+    private String status;
 
     @Column(nullable = false)
     private boolean deleted;

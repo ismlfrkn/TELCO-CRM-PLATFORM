@@ -26,12 +26,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Bolum 11'deki RFC 7807 hata formati, Idempotency-Key header zorunlulugu ve validation
- * hata govdesi bugune kadar hic HTTP seviyesinde test edilmemisti (denetim raporu bulgusu #3).
- * Security filter zinciri (addFilters = false) kasitli olarak disarida birakildi: amac auth
- * degil, controller + GlobalExceptionHandler ciftinin ürettigi hata sozlesmesi.
- */
 @WebMvcTest(controllers = PaymentController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class PaymentControllerWebMvcTest {
@@ -45,9 +39,6 @@ class PaymentControllerWebMvcTest {
     @MockBean
     private PaymentService paymentService;
 
-    // GatewayHeaderAuthenticationFilter bean'i @WebMvcTest'in Filter-tipi tarama kapsamina giriyor
-    // (addFilters=false sadece MockMvc zincirinden cikarir, context'ten degil) ve bu bean'e ihtiyac
-    // duyuyor - gercekte hic calismiyor, sadece context refresh olabilsin diye mock'lanmasi gerekiyor.
     @MockBean
     private GatewayTrustProperties gatewayTrustProperties;
 

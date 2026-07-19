@@ -23,10 +23,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * musteri/fatura dogrulugu bu servisin sorumlulugunda degildir: subscription-service ile ayni
- * gerekceyle, bu kontrollerin cagiran (Order/Billing Service) tarafinda yapildigi varsayilir.
- */
 @Service
 public class PaymentService {
 
@@ -59,21 +55,10 @@ public class PaymentService {
         this.outboxEventService = outboxEventService;
         this.auditLogService = auditLogService;
 
-        // REQUIRES_NEW: bilerek AYRI bir transaction'da calisir. Postgres bir statement'ta hata
-        // verdiginde tum transaction'i "aborted" isaretler, sonraki komutlar (fallback SELECT dahil)
-        // ayni transaction icinde calismaz. Bu yuzden riskli insert kendi izole transaction'inda
-        // yapilir: basarisiz olursa SADECE o kucuk transaction rollback olur, disaridaki cagri
-        // (createPayment) DataIntegrityViolationException'i temiz bir transaction baglaminda yakalayip
-        // fallback SELECT'i calistirabilir.
         this.newPaymentTransactionTemplate = new TransactionTemplate(transactionManager);
         this.newPaymentTransactionTemplate.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
     }
 
-    /**
-     * FR-26: ayni idempotencyKey (Idempotency-Key header) ile iki kez cagrilirsa odeme tekrar
-     * islenmez, ilk cagrinin sonucu aynen dondurulur. Once-kontrol-sonra-yaz araligindaki yarisi
-     * kaybeden eszamanli istek icin DB'deki UNIQUE constraint son güvenlik agidir.
-     */
     public PaymentResponse createPayment(String idempotencyKey, PaymentCreateRequest request) {
         return paymentRepository.findByIdempotencyKey(idempotencyKey)
                 .map(paymentMapper::toResponse)
@@ -186,12 +171,6 @@ public class PaymentService {
         return response;
     }
 
-    /**
-     * SubscriptionActivationFailed kompansasyon consumer'i icin: siparise ait odemeyi bulup refund
-     * eder. Ayni event iki kez gelirse (en-az-bir-kez teslim) ikinci cagri "sadece COMPLETED odemeler
-     * refund edilebilir" istisnasina duser - bu durum burada YUTULUR (zaten refund edilmis demektir),
-     * consumer'i hata ile durdurmaz.
-     */
     @Transactional
     public void refundByOrderIdIfCompleted(UUID orderId) {
         Optional<Payment> payment = paymentRepository.findByOrderId(orderId);
